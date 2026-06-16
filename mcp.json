@@ -1,0 +1,269 @@
+{
+  "name": "freight-capacity-auction-clearing-engine",
+  "tools": [
+    {
+      "name": "get_api_auctions",
+      "description": "GET /api/auctions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_auctions_id",
+      "description": "GET /api/auctions/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_auctions_id_awards",
+      "description": "GET /api/auctions/{id}/awards",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_auctions_id_bids",
+      "description": "GET /api/auctions/{id}/bids",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_auctions_id_explanations",
+      "description": "GET /api/auctions/{id}/explanations",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_audit_events",
+      "description": "GET /api/audit-events",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_carrier_bids",
+      "description": "GET /api/carrier/bids",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_clearing_jobs_id",
+      "description": "GET /api/clearing-jobs/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_imports_id",
+      "description": "GET /api/imports/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_integrations_health",
+      "description": "GET /api/integrations/health",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_policies",
+      "description": "GET /api/policies",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_replays",
+      "description": "GET /api/replays",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_replays_id",
+      "description": "GET /api/replays/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_api_reports_id",
+      "description": "GET /api/reports/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_tenants_me",
+      "description": "GET /tenants/me",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "patch_api_auctions_id",
+      "description": "PATCH /api/auctions/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auctions",
+      "description": "POST /api/auctions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auctions_id_bids",
+      "description": "POST /api/auctions/{id}/bids",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auctions_id_clear",
+      "description": "POST /api/auctions/{id}/clear",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auctions_id_close_bidding",
+      "description": "POST /api/auctions/{id}/close-bidding",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auctions_id_export",
+      "description": "POST /api/auctions/{id}/export",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_auth_refresh",
+      "description": "POST /api/auth/refresh",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_awards_id_approve",
+      "description": "POST /api/awards/{id}/approve",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_awards_id_reject",
+      "description": "POST /api/awards/{id}/reject",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_imports",
+      "description": "POST /api/imports",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_imports_id_commit",
+      "description": "POST /api/imports/{id}/commit",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_integrations_notification_hub_test",
+      "description": "POST /api/integrations/notification-hub/test",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_integrations_webhook_engine_bid_updates",
+      "description": "POST /api/integrations/webhook-engine/bid-updates",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_integrations_workflow_engine_test",
+      "description": "POST /api/integrations/workflow-engine/test",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_policies",
+      "description": "POST /api/policies",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_policies_id_activate",
+      "description": "POST /api/policies/{id}/activate",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_replays",
+      "description": "POST /api/replays",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "post_api_tenants_register",
+      "description": "POST /api/tenants/register",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}

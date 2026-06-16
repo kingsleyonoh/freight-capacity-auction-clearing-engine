@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: Freight Capacity Auction Clearing Engine API
+  version: 0.1.0
+paths:
+  /api/tenants/register:
+    post:
+      summary: TODO: implement POST /api/tenants/register
+      responses:
+        '200':
+          description: TODO
+  /api/auth/refresh:
+    post:
+      summary: TODO: implement POST /api/auth/refresh
+      responses:
+        '200':
+          description: TODO
+  /tenants/me:
+    get:
+      summary: TODO: implement GET /tenants/me
+      responses:
+        '200':
+          description: TODO
+  /api/auctions:
+    get:
+      summary: TODO: implement GET /api/auctions
+      responses:
+        '200':
+          description: TODO
+  /api/auctions:
+    post:
+      summary: TODO: implement POST /api/auctions
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}:
+    get:
+      summary: TODO: implement GET /api/auctions/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}:
+    patch:
+      summary: TODO: implement PATCH /api/auctions/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/close-bidding:
+    post:
+      summary: TODO: implement POST /api/auctions/{id}/close-bidding
+      responses:
+        '200':
+          description: TODO
+  /api/imports:
+    post:
+      summary: TODO: implement POST /api/imports
+      responses:
+        '200':
+          description: TODO
+  /api/imports/{id}:
+    get:
+      summary: TODO: implement GET /api/imports/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/imports/{id}/commit:
+    post:
+      summary: TODO: implement POST /api/imports/{id}/commit
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/bids:
+    get:
+      summary: TODO: implement GET /api/auctions/{id}/bids
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/bids:
+    post:
+      summary: TODO: implement POST /api/auctions/{id}/bids
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/clear:
+    post:
+      summary: TODO: implement POST /api/auctions/{id}/clear
+      responses:
+        '200':
+          description: TODO
+  /api/clearing-jobs/{id}:
+    get:
+      summary: TODO: implement GET /api/clearing-jobs/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/awards:
+    get:
+      summary: TODO: implement GET /api/auctions/{id}/awards
+      responses:
+        '200':
+          description: TODO
+  /api/awards/{id}/approve:
+    post:
+      summary: TODO: implement POST /api/awards/{id}/approve
+      responses:
+        '200':
+          description: TODO
+  /api/awards/{id}/reject:
+    post:
+      summary: TODO: implement POST /api/awards/{id}/reject
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/explanations:
+    get:
+      summary: TODO: implement GET /api/auctions/{id}/explanations
+      responses:
+        '200':
+          description: TODO
+  /api/carrier/bids:
+    get:
+      summary: TODO: implement GET /api/carrier/bids
+      responses:
+        '200':
+          description: TODO
+  /api/auctions/{id}/export:
+    post:
+      summary: TODO: implement POST /api/auctions/{id}/export
+      responses:
+        '200':
+          description: TODO
+  /api/reports/{id}:
+    get:
+      summary: TODO: implement GET /api/reports/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/policies:
+    get:
+      summary: TODO: implement GET /api/policies
+      responses:
+        '200':
+          description: TODO
+  /api/policies:
+    post:
+      summary: TODO: implement POST /api/policies
+      responses:
+        '200':
+          description: TODO
+  /api/policies/{id}/activate:
+    post:
+      summary: TODO: implement POST /api/policies/{id}/activate
+      responses:
+        '200':
+          description: TODO
+  /api/replays:
+    get:
+      summary: TODO: implement GET /api/replays
+      responses:
+        '200':
+          description: TODO
+  /api/replays:
+    post:
+      summary: TODO: implement POST /api/replays
+      responses:
+        '200':
+          description: TODO
+  /api/replays/{id}:
+    get:
+      summary: TODO: implement GET /api/replays/{id}
+      responses:
+        '200':
+          description: TODO
+  /api/audit-events:
+    get:
+      summary: TODO: implement GET /api/audit-events
+      responses:
+        '200':
+          description: TODO
+  /api/integrations/health:
+    get:
+      summary: TODO: implement GET /api/integrations/health
+      responses:
+        '200':
+          description: TODO
+  /api/integrations/notification-hub/test:
+    post:
+      summary: TODO: implement POST /api/integrations/notification-hub/test
+      responses:
+        '200':
+          description: TODO
+  /api/integrations/workflow-engine/test:
+    post:
+      summary: TODO: implement POST /api/integrations/workflow-engine/test
+      responses:
+        '200':
+          description: TODO
+  /api/integrations/webhook-engine/bid-updates:
+    post:
+      summary: TODO: implement POST /api/integrations/webhook-engine/bid-updates
+      responses:
+        '200':
+          description: TODO

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+_build
+node_modules
+coverage
+playwright-report
+test-results
+.yolo
+.pi/browser
+.pi/agents
+tools/klevar-yolo-runtime
+tools/klevar-pi-package
+data/*.duckdb
+*.log
