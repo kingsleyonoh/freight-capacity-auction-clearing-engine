@@ -44,6 +44,27 @@ let infrastructure_summary_matches_runtime_config () =
   check string "redis url" config.redis_url summary.redis_url;
   check string "duckdb path" config.replay_store_path summary.duckdb_path
 
+let shared_architecture_docs_cover_all_required_helpers () =
+  let index = read ".agent/knowledge/foundation/_index.md" in
+  let foundation = read ".agent/knowledge/foundation/shared-architecture-contracts.md" in
+  check bool "foundation index links shared architecture contracts" true
+    (contains index "shared-architecture-contracts.md");
+  List.iter
+    (fun helper ->
+      check bool (helper ^ " documented") true (contains foundation helper))
+    [
+      "DB pool";
+      "Redis queue";
+      "HTTP client";
+      "event outbox";
+      "tenant context";
+      "solver adapter";
+      "error response";
+      "cached helper";
+    ];
+  check bool "protected rule file not used as new docs target" false
+    (contains foundation ".agent/rules/CODEBASE_CONTEXT.md")
+
 let () =
   run "integration bootstrap"
     [
@@ -55,4 +76,6 @@ let () =
         [ test_case "has durable directory" `Quick replay_store_directory_exists ] );
       ( "runtime infrastructure",
         [ test_case "matches config" `Quick infrastructure_summary_matches_runtime_config ] );
+      ( "shared architecture docs",
+        [ test_case "cover required helper contracts" `Quick shared_architecture_docs_cover_all_required_helpers ] );
     ]

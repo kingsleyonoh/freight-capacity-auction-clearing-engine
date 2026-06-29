@@ -3,4 +3,4 @@
 (library
  (name freight_capacity_auction_clearing_engine)
  (public_name freight_capacity_auction_clearing_engine)
- (libraries freight_capacity_auction_clearing_engine_config))
+ (libraries freight_capacity_auction_clearing_engine_config yojson))

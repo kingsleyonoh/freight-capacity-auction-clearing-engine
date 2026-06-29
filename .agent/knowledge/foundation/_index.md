@@ -8,6 +8,7 @@
 |------|---------|
 | `config-runtime-config.md` | Typed environment configuration loader with safe placeholders and empty optional integration secrets. |
 | `infra-local-services.md` | Local Postgres, Redis, DuckDB replay, and solver process service boundary. |
+| `shared-architecture-contracts.md` | Shared cached helper, tenant context, DB pool, Redis queue, HTTP client, event outbox, solver adapter, and error response contracts. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
 
 ## What belongs here
