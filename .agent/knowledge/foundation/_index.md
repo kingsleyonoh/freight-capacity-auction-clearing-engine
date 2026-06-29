@@ -6,6 +6,8 @@
 
 | File | Summary |
 |------|---------|
+| `config-runtime-config.md` | Typed environment configuration loader with safe placeholders and empty optional integration secrets. |
+| `infra-local-services.md` | Local Postgres, Redis, DuckDB replay, and solver process service boundary. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
 
 ## What belongs here

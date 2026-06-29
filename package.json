@@ -1,0 +1,15 @@
+{
+  "name": "freight-capacity-auction-clearing-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "playwright:install": "playwright install --with-deps chromium",
+    "impeccable:detect": "npx --yes impeccable@latest detect --fast --json PRODUCT.md DESIGN.md src/ui tests/e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0",
+    "typescript": "^5.5.4"
+  }
+}

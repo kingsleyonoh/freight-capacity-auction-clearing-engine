@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (libraries
+  alcotest
+  freight_capacity_auction_clearing_engine_config
+  freight_capacity_auction_clearing_engine))

@@ -1,0 +1,35 @@
+(executable
+ (name server)
+ (modules server)
+ (libraries
+  dream
+  logs
+  freight_capacity_auction_clearing_engine_config
+  freight_capacity_auction_clearing_engine))
+
+(executable
+ (name worker)
+ (modules worker)
+ (libraries freight_capacity_auction_clearing_engine_config))
+
+(executable
+ (name migrate)
+ (modules migrate)
+ (libraries freight_capacity_auction_clearing_engine_config))
+
+(executable
+ (name setup)
+ (modules setup)
+ (libraries freight_capacity_auction_clearing_engine_config))
+
+(executable
+ (name replay_bench)
+ (modules replay_bench)
+ (libraries freight_capacity_auction_clearing_engine_config))
+
+(executable
+ (name solver_smoke)
+ (modules solver_smoke)
+ (libraries
+  freight_capacity_auction_clearing_engine_config
+  freight_capacity_auction_clearing_engine))
