@@ -1,106 +1,131 @@
 # Freight Capacity Auction Clearing Engine — Codebase Context
 
-> **This is the TEMPLATE version of `CODEBASE_CONTEXT.md`** — a blueprint with empty tables and `{{PLACEHOLDER}}` tokens.
+> Greenfield plan from `docs/freight-capacity-auction-clearing-engine_prd.md`. Planned paths do not exist until their phase lands. Read `CODEBASE_CONTEXT_SCHEMA.md` and `CODEBASE_CONTEXT_MODULES.md` with this file.
 >
-> When a new project is created via `/bootstrap` or `/retrofit`, this file is copied and populated with real project data (tech stack, modules, schema, etc.). Once populated, it becomes the AI's primary source of truth for understanding that project. Updated by `/sync-context`.
->
-> **Do NOT fill in the tables here.** They are intentionally empty — workflows fill them per-project.
->
-> Last updated: {{DATE}}
-> Template synced: {{DATE}}
-
-<template_manager_warning>
-⚠️ **TEMPLATE MANAGER — MANDATORY PROCESS FOR EVERY CHANGE:**
-1. **BEFORE modifying any file** in this template, open `MAINTAINING.md` and find the matching checklist.
-2. **AFTER modifying the file**, walk through every item in that checklist and apply each one.
-3. **AFTER all checklist items are done**, check the "After ANY Template Change" section at the bottom.
-4. Do NOT commit until all propagation steps are complete.
-
-This is not optional. Skipping this causes sync failures across all downstream projects.
-(Note: bootstrap/retrofit workflows will delete this block when creating a new project.)
-</template_manager_warning>
+> Last updated: 2026-07-09
+> Template synced: 2026-07-09
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Language | |
-| Framework | |
-| Database | |
-| Hosting | |
-| Package Manager | |
-| Test Runner | |
-| Build Tool | |
+|---|---|
+| Language/build | OCaml 5.2.0, local opam switch, Dune |
+| HTTP/UI | Dream, server-rendered HTML, HTMX fragments, Tailwind CSS |
+| OLTP | PostgreSQL 16 via Caqti; tenant-leading indexes; JSONB evidence snapshots |
+| Queue/cache | Redis; canonical job state stays in PostgreSQL |
+| Replay | DuckDB via typed binding or typed CLI adapter |
+| Optimization | MiniZinc process adapter; OR-Tools worker fallback |
+| Runtime libraries | Lwt, Logs, Yojson/ppx_deriving_yojson |
+| Tests | Alcotest/OUnit2, SQL integration harness, Playwright |
+| Asset tooling | npm only for Tailwind, HTMX assets, Playwright/browser tooling |
+| Hosting | Docker Compose self-hosted; Railway/Fly.io-compatible image; separate server/worker |
+| Local services | local PostgreSQL, local Redis |
 
-## Project Structure
+## Planned Structure
 
+```text
+bin/                  server, worker, migrate, setup, replay benchmark, solver smoke
+config/               typed runtime config and feature flags
+src/shared/           DB, Redis, HTTP, tenant context, outbox, errors
+src/auth/             API key, JWT session, permission matrix
+src/<domain>/         tenants, carriers, policies, auctions, imports, clearing,
+                      solver, approvals, replays, reports, notifications,
+                      integrations, jobs, ui
+migrations/           ordered PostgreSQL migrations
+tests/                unit, integration, authorization, fixtures, e2e
+data/                 local DuckDB/artifacts; not canonical tenant authority
 ```
-project-name/
-├── [populated by bootstrap/retrofit from PRD Project Structure section (default §9) or codebase scan]
-```
 
-## Key Modules
+Detailed planned files/dependency graph: `CODEBASE_CONTEXT_MODULES.md` and PRD §9. Schema/status/index detail: `CODEBASE_CONTEXT_SCHEMA.md` and PRD §4.
 
-> **Modules live in `.agent/knowledge/modules/` — one file per module.** See `modules/_index.md` for the catalog. Do NOT add a flat table here — it's a banned append-only pattern. See `CODING_STANDARDS.md` — "Append-Only Knowledge Files Banned."
+## Tenant Model
 
-## Database Schema
+- Resolve tenant from hashed `X-API-Key` or JWT `{tenant_id,user_id,role}` in planned `src/shared/tenant_context.ml` and `src/auth/`.
+- Every API/UI/job/replay/report/import/notification/callback carries explicit tenant context; route/body IDs are re-scoped before domain work.
+- Permissions live in planned `src/auth/permission_matrix.ml`; unknown names fail closed. Roles: `tenant_admin`, `auction_manager`, `procurement_analyst`, `carrier_viewer`.
+- Background work has one tenant and a system actor. Carrier viewers are additionally constrained by `carrier_id`.
+- Config-driven UI/reports render immutable `TenantAuctionSnapshot` data from `report_exports.snapshot_json` with strict missing-token handling and sealed-bid redaction.
+- Scoped tests load both records in `tests/fixtures/tenants.json` and assert bidirectional non-leakage.
 
-| Table | Purpose | Key Fields |
-|-------|---------|-----------|
-| | | |
+## Integrations and Observability
 
-## External Integrations
+| Boundary | Contract | Configuration |
+|---|---|---|
+| CSV/Parquet | Local preview → staging/quarantine → commit | upload/replay vars |
+| MiniZinc / OR-Tools | Child process; versioned input/output; fail closed | solver vars |
+| Notification Hub (optional) | Outbound `POST /api/events`; outbox/health failure only | `NOTIFICATION_HUB_*` |
+| Workflow Engine (optional) | Outbound execute/status; local approval canonical | `WORKFLOW_ENGINE_*` |
+| Webhook Engine (optional) | Inbound authenticated idempotent bid update | `WEBHOOK_ENGINE_*` |
+| Error/trace/metrics | Sentry or OTLP; JSON stdout; `/metrics` | observability vars |
+| Analytics | Optional PostHog-compatible capture | `POSTHOG_KEY`, `POSTHOG_HOST` |
 
-| Service | Purpose | Auth Method |
-|---------|---------|------------|
-| | | |
+Core readiness never depends on optional adapters. Core health: `/health`, `/health/db`, `/health/ready`; tenant adapter health: `/api/integrations/health`.
 
 ## Environment Variables
 
-| Variable | Purpose | Source |
-|----------|---------|--------|
-| | | |
+| Group | Exact variables and safe defaults/requirements |
+|---|---|
+| App | `APP_ENV=development`; `APP_BASE_URL=http://localhost:8080`; `APP_PORT=8080`; `LOG_LEVEL=info`; `SECRET_KEY_BASE` required |
+| Data | `DATABASE_URL` required; `REDIS_URL=redis://localhost:6379/0`; `REPLAY_STORE_PATH=./data/replay.duckdb`; `MIGRATIONS_AUTO_RUN=false` |
+| Tenant seed | `SELF_REGISTRATION_ENABLED=true`; `DEFAULT_TENANT_NAME=Default Freight Auction Tenant`; `DEFAULT_ADMIN_EMAIL=admin@example.com`; `SEED_SAMPLE_DATA=true` |
+| Auth | `AUTH_TOKEN_TTL_MINUTES=60`; `API_KEY_PREFIX=fca_live` |
+| Import | `MAX_CSV_UPLOAD_MB=50`; `DEFAULT_CURRENCY=USD`; `BID_LATE_GRACE_SECONDS=0`; `UNKNOWN_CARRIER_POLICY=reject` |
+| Solver/replay | `SOLVER_BACKEND=minizinc`; `SOLVER_TIMEOUT_SECONDS=30`; `PRODUCTION_CLEARING_REQUIRES_SOLVER=true`; `HEURISTIC_FALLBACK_FOR_REPLAY=true`; `MINIZINC_BINARY_PATH=minizinc`; `ORTOOLS_WORKER_PATH` optional; `REPLAY_MAX_ROWS=1000000`; `REPLAY_ALLOW_EXTERNAL_EVENTS=false` |
+| Policy/retention | `DEFAULT_SERVICE_RISK_CAP=0.15`; `DEFAULT_MAX_CARRIER_SHARE=0.30`; `APPROVAL_EXPIRY_HOURS=24`; `AUDIT_RETENTION_DAYS=365`; `SOLVER_ARTIFACT_RETENTION_DAYS=90` |
+| Notification Hub | `NOTIFICATION_HUB_ENABLED=false`; `NOTIFICATION_HUB_URL=http://localhost:3847`; `NOTIFICATION_HUB_API_KEY` optional secret; `NOTIFICATION_RETRY_ENABLED=true` |
+| Workflow Engine | `WORKFLOW_ENGINE_ENABLED=false`; `WORKFLOW_ENGINE_URL=http://localhost:8000`; `WORKFLOW_ENGINE_API_KEY` optional secret; `WORKFLOW_HIGH_VALUE_APPROVAL_ID` optional; `WORKFLOW_STATUS_POLLING_ENABLED=true` |
+| Webhook Engine | `WEBHOOK_ENGINE_ENABLED=false`; `WEBHOOK_ENGINE_URL=http://localhost:3000`; `WEBHOOK_ENGINE_API_KEY` optional secret; `WEBHOOK_ENGINE_RECEIVER_SECRET` optional secret |
+| Integration health | `INTEGRATION_HTTP_TIMEOUT_SECONDS=5`; `INTEGRATION_HEALTH_CHECK_ENABLED=true` |
+| Observability | `SENTRY_DSN` optional; `OTEL_EXPORTER_OTLP_ENDPOINT` optional; `METRICS_ENABLED=true`; `POSTHOG_KEY` optional; `POSTHOG_HOST` optional |
 
-## Commands
+Secrets are environment-only, never logged, and empty in `.env.example`.
+
+## Exact Commands
 
 | Action | Command |
-|--------|---------|
-| Dev server | |
-| Run tests | |
-| Run tests (unit only) | |
-| Run tests (integration only) | |
-| Lint/check | |
-| Build | |
-| Migrate DB | |
-| E2E tests | |
-| Start infra | |
-| Stop infra | |
-| Check infra | |
+|---|---|
+| Install OCaml/test deps | `opam switch create . 5.2.0 --deps-only --with-test` |
+| Install asset/E2E tooling | `npm install` |
+| Start infra | `docker compose up -d postgres redis` |
+| Stop infra | `docker compose down` |
+| Check infra | `docker compose ps` |
+| Migrate DB | `dune exec bin/migrate.exe` |
+| First-run seed | `dune exec bin/setup.exe` |
+| Dev server | `dune exec bin/server.exe` |
+| Dev worker | `dune exec bin/worker.exe` |
+| Run tests | `dune runtest --no-buffer && dune exec tests/integration/main.exe && npx playwright test` |
+| Run tests (unit only) | `dune runtest --no-buffer` |
+| Run tests (integration only) | `dune exec tests/integration/main.exe` |
+| E2E tests | `npx playwright test` |
+| Lint/type/static checks | `dune build @check` |
+| Format | `dune build @fmt --auto-promote` |
+| Build | `dune build @all` |
+| Golden replay | `dune exec bin/replay_bench.exe -- --fixture tests/fixtures/replay/golden_12_month.parquet` |
+| Solver smoke | `dune exec bin/solver_smoke.exe` |
 
-> **Run tests / Run tests (unit only) / Run tests (integration only):** YOLO's test-tier optimization (see `yolo-subagent-implement.md` Step 4.5) uses all three:
-> - **Run tests** — the FULL suite (unit + integration). Always runs at REGRESSION, Step 7. Populate with the project's canonical full-test command (e.g. `npm test`, `pytest`, `go test ./...`).
-> - **Run tests (unit only)** — a fast-feedback tier that skips DB / cache / queue / browser setup. Populate if the project splits tests by directory or marker (e.g. `npm run test:unit`, `pytest tests/unit`, `go test ./pkg/...`). If no such split exists, set to `N/A` — YOLO sub-agents fall back to the full command and flag `no_test_tier_split`.
-> - **Run tests (integration only)** — unit + in-process integration but NOT E2E over HTTP. Populate if the project splits (e.g. `npm run test:integration`, `pytest tests/integration`). If there is no separate tier, duplicate the "Run tests" value. If there is no test suite at all, set to `N/A`.
->
-> **Start infra / Stop infra / Check infra:** Whatever command this project uses to start/stop/check its local services (Postgres, Redis, NATS, etc.). May be `docker compose up -d`, `brew services start postgresql@16 redis`, `foreman start -f Procfile.dev`, `make dev-up`, `npm run services:up`, or `N/A` if the project has no external services. YOLO Phase 0.3b uses these to ensure infrastructure is running before batch dispatch.
+## Shared Foundation — Directory-Per-Primitive Pointers
 
-## Key Patterns & Conventions
+Read `.agent/knowledge/foundation/_index.md`, then the relevant item in full. Create/index each planned item only when its source primitive lands; never replace this with an accumulating knowledge table.
 
-> **Patterns live in `.agent/knowledge/patterns/` — one file per pattern.** See `patterns/_index.md` for the catalog. Do NOT add a flat bullet list here — it's a banned append-only pattern. See `CODING_STANDARDS.md` — "Append-Only Knowledge Files Banned."
+| Planned item | Contract | Planned source |
+|---|---|---|
+| `core-runtime-config.md` | Typed env/flags/startup validation | `config/` |
+| `db-postgres-pool.md` | One Caqti pool, tenant queries, transactions | `src/shared/db_pool.ml` |
+| `queue-redis.md` | Queue/lock/retry/shutdown policy | `src/shared/redis_queue.ml` |
+| `http-dream-server.md` | Middleware, request IDs, errors | `bin/server.ml`, `src/shared/errors.ml` |
+| `auth-tenant-context.md` | API-key/JWT/permissions | `src/shared/tenant_context.ml`, `src/auth/` |
+| `http-outbound-client.md` | Timeouts/idempotency/redaction | `src/shared/http_client.ml` |
+| `events-integration-outbox.md` | Transactional optional delivery | `src/shared/event_outbox.ml` |
+| `solver-process-boundary.md` | Artifact/timeout/backend protocol | `src/solver/process_adapter.ml` |
+| `ui-server-rendered-components.md` | Dream/HTMX/Tailwind state pattern | `src/ui/` |
 
-## Gotchas & Lessons Learned
+## Knowledge and Deep References
 
-> **Gotchas live in `.agent/knowledge/gotchas/` — one file per gotcha.** See `gotchas/_index.md` for the catalog. `yolo-subagent-implement` writes new gotcha files during Step 9.3; never append to a flat table here. See `CODING_STANDARDS.md` — "Append-Only Knowledge Files Banned."
-
-## Shared Foundation (MUST READ before any implementation)
-
-> **Foundation primitives live in `.agent/knowledge/foundation/` — one file per primitive.** See `foundation/_index.md` for the catalog. The AI MUST read the relevant files **in full** before writing any new code that touches the surface they establish. Do NOT add a flat table here — it's a banned append-only pattern. See `CODING_STANDARDS.md` — "Append-Only Knowledge Files Banned."
-
-## Deep References
-
-> For detailed implementation patterns, have a focused Mesh discovery/implementation lane read the relevant source — don't embed full source detail here. Keeps this file lean. When `/deep-study` or `/sync-context` runs, it populates this table and **trims** the corresponding embedded sections above to one-line summaries.
-
-| Topic | Where to look |
-|-------|--------------|
-| [module name] | `src/[module]/` |
-| Test patterns | `tests/` |
+- Patterns: `.agent/knowledge/patterns/_index.md`
+- Gotchas: `.agent/knowledge/gotchas/_index.md` (only evidence-backed PostgreSQL/Docker items, one file each)
+- Modules: `.agent/knowledge/modules/_index.md`
+- Foundation: `.agent/knowledge/foundation/_index.md`
+- Module/dependency deep references: `CODEBASE_CONTEXT_MODULES.md`
+- Schema/data deep references: `CODEBASE_CONTEXT_SCHEMA.md`
+- Binding product detail and acceptance: PRD §2–§15
+- Tests: `tests/unit/`, `tests/integration/`, `tests/authorization/`, `tests/e2e/`, `tests/fixtures/`

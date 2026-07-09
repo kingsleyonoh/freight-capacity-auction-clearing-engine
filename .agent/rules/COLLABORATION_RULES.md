@@ -1,78 +1,49 @@
-# Collaboration Rules
+# Freight Capacity Auction Clearing Engine — Collaboration Rules
 
-These rules apply when a Klevar project has external contributors, feature branches, or `docs/claims/*.json`. Legacy `/klevar-yolo parallel ...` usage is retired/excised historical context only.
+## Branches
 
-## Operator Model
+- `main`: production.
+- `dev`: integration.
+- `feature/<slug>`: contributor work targeting `dev`.
+- `hotfix/<slug>`: emergency repair reconciled into both `main` and `dev`.
 
-A contributor may be a human using an AI coding tool. Treat these as operators:
+Do not work directly on another operator's branch or files without explicit approval.
 
-- `operator:pi-yolo:*`
-- `contributor:<name>` using Claude Code, Codex, Cursor, Pi, or manual edits
-- `human-manual:<name>`
+## Claims
 
-## Branch Protocol
-
-- `main` is production.
-- `dev` is the integration branch.
-- `feature/<slug>` is contributor work.
-- `yolo/batch-*` is runtime-owned work.
-- `hotfix/<slug>` is emergency production repair.
-
-Do not work directly on another operator's branch without explicit approval.
-
-## Claims Protocol
-
-When multiple operators may work at once, claim work before editing. Claims live in `docs/claims/*.json`:
+When operators may overlap, claim work in `docs/claims/<slug>.json` with:
 
 ```json
 {
   "schemaVersion": 1,
-  "task": "[API] Add survey export — PRD §8b",
-  "operator": "contributor:alice",
-  "tool": "claude-code",
-  "branch": "feature/survey-export",
+  "task": "short task and PRD reference",
+  "operator": "contributor:name",
+  "tool": "pi-or-other-tool",
+  "branch": "feature/slug",
   "status": "active",
-  "startedAt": "2026-05-18T15:30:00Z",
-  "expectedFiles": ["src/api/survey-export.ts"]
+  "startedAt": "ISO-8601 timestamp",
+  "expectedFiles": ["path/to/file"]
 }
 ```
 
-Rules:
+- Do not claim active work owned by someone else.
+- Do not edit another active claim's `expectedFiles`.
+- Update expected paths when scope changes; mark claims `done` or `released` promptly.
+- Claims do not replace Git isolation or review.
 
-- Do not claim a task already actively claimed by another operator.
-- Do not edit files listed in another active claim's `expectedFiles`.
-- Keep `expectedFiles` honest and update the claim if scope changes.
-- Mark claims `done` or `released` when finished or abandoned.
-- If no claims exist, solo Klevar flow remains unchanged.
+## Contributor Flow
 
-## AI Contributor Workflow
+1. Read task/spec and routed rules.
+2. Check claims and use the correct branch.
+3. Claim expected files before editing in concurrent work.
+4. Follow RED/GREEN/regression with local PostgreSQL, local Redis as applicable.
+5. Run static, secret, and browser gates for touched surfaces.
+6. Open a review into `dev` with path-backed evidence.
 
-1. Read `docs/progress.md`, this file, and project rules.
-2. Create/use a feature branch.
-3. Add a claim before editing.
-4. Use TDD and run the project regression command.
-5. Run secret scan before PR/commit.
-6. Open PR into `dev` with evidence.
+## Delegated Agent Safety
 
-## Pi YOLO Behavior
-
-Pi YOLO must skip externally claimed tasks and avoid expected-file conflicts. Local parallel mode is allowed only when independence can be proven. If there is doubt, fall back to serial work or stop for operator decision.
-
-## Main-Agent Safety While YOLO Is Active
-
-When `.yolo/runtime-state.json` reports `running`, `failed`, or `paused` with a worktree, the chat/main agent is a read-only observer by default.
-
-Allowed without takeover:
-
-- Explain status, gates, logs, claims, changed files, and likely next actions.
-- Use Mesh/Agency status artifacts, fleet inspect/log tools, and read-only file inspection when historical state needs explanation.
-- Do not recommend `/klevar-yolo continue`, `/yolo-pause`, or `/yolo-clean batch-NNN`; those legacy runtime commands are retired/excised compatibility surfaces.
-
-Blocked unless the user explicitly asks to pause/take over/intervene:
-
-- Editing files inside the active YOLO worktree.
-- Editing files listed in active `docs/claims/*.json` claims.
-- Editing root-project files that overlap the active batch's changed/claimed files.
-- Cleaning/removing worktrees by hand instead of using runtime recovery commands.
-
-If the user wants manual intervention, preserve evidence first, explain that legacy pause/continue/clean commands are retired, and confirm whether any edits should target a preserved historical worktree or the root project.
+- Assign disjoint file ownership and bounded permissions.
+- Workers may inspect shared context but edit only assigned paths.
+- Workers do not commit, push, merge, deploy, expose secrets, or start autonomous runtime controllers.
+- The main agent resolves contradictory reports and approves any scope expansion.
+- Preserve artifacts before recovery; never delete another worker's worktree/artifacts manually.

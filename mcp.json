@@ -1,0 +1,438 @@
+{
+  "name": "freight-capacity-auction-clearing-engine",
+  "version": "0.1.0",
+  "description": "MCP HTTP tool manifest for tenant-scoped freight auction intake, clearing, replay, reporting, and integrations.",
+  "repository": "https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine.git",
+  "productRequirements": "docs/freight-capacity-auction-clearing-engine_prd.md",
+  "transport": "stdio",
+  "baseUrl": "http://localhost:8080",
+  "defaultAuth": {
+    "type": "apiKey",
+    "header": "X-API-Key",
+    "environmentVariable": "FREIGHT_CAPACITY_AUCTION_API_KEY"
+  },
+  "tools": [
+    {
+      "name": "freight_capacity_auction_register_tenant",
+      "description": "Register a tenant when public self-registration is enabled.",
+      "http": { "method": "POST", "path": "/api/tenants/register", "auth": "public" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "legal_name": { "type": "string" },
+          "contact": { "type": "object" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_current_tenant",
+      "description": "Get the authenticated tenant's non-secret profile.",
+      "http": { "method": "GET", "path": "/tenants/me", "auth": "tenant" },
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "freight_capacity_auction_list_auctions",
+      "description": "List tenant auctions using filters and cursor pagination.",
+      "http": { "method": "GET", "path": "/api/auctions", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "mode": { "type": "string" },
+          "cursor": { "type": "string" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_create_auction",
+      "description": "Create a draft freight auction.",
+      "http": { "method": "POST", "path": "/api/auctions", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["name", "mode", "bid_open_at", "bid_close_at", "policy_id"],
+        "properties": {
+          "name": { "type": "string" },
+          "mode": { "type": "string", "enum": ["single_round_spot", "multi_round_spot", "emergency_reclear", "scenario_replay"] },
+          "bid_open_at": { "type": "string", "format": "date-time" },
+          "bid_close_at": { "type": "string", "format": "date-time" },
+          "policy_id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_auction",
+      "description": "Get tenant-scoped auction details.",
+      "http": { "method": "GET", "path": "/api/auctions/{id}", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_close_bidding",
+      "description": "Close an auction bid window and persist whether clearing should auto-queue.",
+      "http": { "method": "POST", "path": "/api/auctions/{id}/close-bidding", "auth": "tenant", "permission": "auctions.close" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "auto_queue_clearing"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "auto_queue_clearing": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_create_import",
+      "description": "Create a staged CSV, Parquet, or JSON import run.",
+      "http": { "method": "POST", "path": "/api/imports", "auth": "tenant", "permission": "imports.create" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["resource_type"],
+        "properties": {
+          "resource_type": { "type": "string", "enum": ["carriers", "lanes", "loads", "bids", "replay_dataset"] },
+          "auction_id": { "type": "string", "format": "uuid" },
+          "file_path": { "type": "string" },
+          "mapping": { "type": "object" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_preview_import",
+      "description": "Get an import validation summary, staged rows, and row errors.",
+      "http": { "method": "GET", "path": "/api/imports/{id}", "auth": "tenant", "permission": "imports.read" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_commit_import",
+      "description": "Commit valid normalized rows from a reviewed import run.",
+      "http": { "method": "POST", "path": "/api/imports/{id}/commit", "auth": "tenant", "permission": "imports.commit" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "confirm"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "confirm": { "type": "boolean", "const": true }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_submit_bid",
+      "description": "Submit an idempotent bid to an auction.",
+      "http": { "method": "POST", "path": "/api/auctions/{id}/bids", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "load_id", "carrier_id", "idempotency_key", "bid_amount"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "load_id": { "type": "string", "format": "uuid" },
+          "carrier_id": { "type": "string", "format": "uuid" },
+          "idempotency_key": { "type": "string" },
+          "bid_amount": { "type": "number", "minimum": 0 },
+          "currency": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_clear_auction",
+      "description": "Queue constraint-backed clearing and capture solver evidence.",
+      "http": { "method": "POST", "path": "/api/auctions/{id}/clear", "auth": "tenant", "permission": "auctions.clear" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "policy_id": { "type": "string", "format": "uuid" },
+          "solver_backend": { "type": "string", "enum": ["minizinc", "ortools", "heuristic_baseline"] },
+          "dry_run": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_clearing_job",
+      "description": "Get clearing job status, result, infeasibility evidence, and artifacts.",
+      "http": { "method": "GET", "path": "/api/clearing-jobs/{id}", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_list_awards",
+      "description": "List role-aware awards for an auction.",
+      "http": { "method": "GET", "path": "/api/auctions/{id}/awards", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_approve_award",
+      "description": "Approve an approval-required award with an audit note.",
+      "http": { "method": "POST", "path": "/api/awards/{id}/approve", "auth": "tenant", "permission": "awards.approve" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "decision"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "decision": { "type": "string", "enum": ["approve"] },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_reject_award",
+      "description": "Reject an approval-required award with a reason.",
+      "http": { "method": "POST", "path": "/api/awards/{id}/reject", "auth": "tenant", "permission": "awards.approve" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "reason"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_explanations",
+      "description": "Get role-redacted clearing explanations for an auction.",
+      "http": { "method": "GET", "path": "/api/auctions/{id}/explanations", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_carrier_bids",
+      "description": "Get only the authenticated carrier's bids and redacted explanations.",
+      "http": { "method": "GET", "path": "/api/carrier/bids", "auth": "carrier" },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "cursor": { "type": "string" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_export_auction",
+      "description": "Create a frozen redacted auction export artifact.",
+      "http": { "method": "POST", "path": "/api/auctions/{id}/export", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "format"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "format": { "type": "string", "enum": ["csv", "json", "html", "pdf"] }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_report",
+      "description": "Retrieve a frozen report/export snapshot.",
+      "http": { "method": "GET", "path": "/api/reports/{id}", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "format": { "type": "string", "enum": ["csv", "json", "html", "pdf"] }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_list_policies",
+      "description": "List tenant clearing policies.",
+      "http": { "method": "GET", "path": "/api/policies", "auth": "tenant" },
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "freight_capacity_auction_create_policy",
+      "description": "Create a versioned draft clearing policy.",
+      "http": { "method": "POST", "path": "/api/policies", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "max_service_risk": { "type": "number" },
+          "max_single_carrier_share": { "type": "number" },
+          "reserve_price_behavior": { "type": "string" },
+          "fairness_rules": { "type": "object" },
+          "relaxation_order": { "type": "array" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_activate_policy",
+      "description": "Activate a policy after replay-gate evidence passes.",
+      "http": { "method": "POST", "path": "/api/policies/{id}/activate", "auth": "tenant", "permission": "policies.activate" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_list_carriers",
+      "description": "List tenant carrier master data.",
+      "http": { "method": "GET", "path": "/api/carriers", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "search": { "type": "string" },
+          "cursor": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_create_carrier",
+      "description": "Create a carrier master-data record.",
+      "http": { "method": "POST", "path": "/api/carriers", "auth": "tenant", "permission": "carriers.manage" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["legal_name", "display_name", "status"],
+        "properties": {
+          "legal_name": { "type": "string" },
+          "display_name": { "type": "string" },
+          "mc_number": { "type": "string" },
+          "dot_number": { "type": "string" },
+          "equipment_types": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["active", "suspended", "inactive", "pending_review"] }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_update_carrier",
+      "description": "Update a tenant carrier profile or lifecycle status.",
+      "http": { "method": "PATCH", "path": "/api/carriers/{id}", "auth": "tenant", "permission": "carriers.manage" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id", "changes"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "changes": { "type": "object" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_create_replay",
+      "description": "Create a deterministic policy-versus-baseline replay run.",
+      "http": { "method": "POST", "path": "/api/replays", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["name", "dataset_uri", "baseline_strategy", "policy_id"],
+        "properties": {
+          "name": { "type": "string" },
+          "dataset_uri": { "type": "string" },
+          "baseline_strategy": { "type": "string", "enum": ["lowest_cost", "first_acceptable", "incumbent_preference", "historical_awards"] },
+          "policy_id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_replay",
+      "description": "Get replay lifecycle, metrics, comparisons, and evidence artifacts.",
+      "http": { "method": "GET", "path": "/api/replays/{id}", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_list_audit_events",
+      "description": "List tenant audit events with entity and event filters.",
+      "http": { "method": "GET", "path": "/api/audit-events", "auth": "tenant", "permission": "audit_reports.view" },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_type": { "type": "string" },
+          "entity_id": { "type": "string", "format": "uuid" },
+          "event_type": { "type": "string" },
+          "cursor": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_update_tenant_settings",
+      "description": "Update tenant identity/settings as a tenant administrator.",
+      "http": { "method": "PATCH", "path": "/api/settings/tenant", "auth": "tenant_admin" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["changes"],
+        "properties": { "changes": { "type": "object" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_update_notification_settings",
+      "description": "Update the current user's non-critical notification preferences.",
+      "http": { "method": "PATCH", "path": "/api/settings/notifications", "auth": "tenant" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["preferences"],
+        "properties": { "preferences": { "type": "array", "items": { "type": "object" } } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_update_integration_settings",
+      "description": "Update disabled-by-default adapter flags and non-secret env-var references.",
+      "http": { "method": "PATCH", "path": "/api/integration-settings", "auth": "tenant_admin" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["integration_name", "enabled"],
+        "properties": {
+          "integration_name": { "type": "string", "enum": ["notification_hub", "workflow_engine", "webhook_engine"] },
+          "enabled": { "type": "boolean" },
+          "config": { "type": "object" }
+        }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_get_integration_health",
+      "description": "Get optional-adapter health separately from core readiness.",
+      "http": { "method": "GET", "path": "/api/integrations/health", "auth": "tenant" },
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "freight_capacity_auction_test_notification_hub",
+      "description": "Send a fixture-safe Notification Hub test event.",
+      "http": { "method": "POST", "path": "/api/integrations/notification-hub/test", "auth": "tenant_admin" },
+      "inputSchema": {
+        "type": "object",
+        "properties": { "event_type": { "type": "string" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_test_workflow_engine",
+      "description": "Trigger one idempotent Workflow Engine test execution.",
+      "http": { "method": "POST", "path": "/api/integrations/workflow-engine/test", "auth": "tenant_admin" },
+      "inputSchema": {
+        "type": "object",
+        "required": ["workflow_id"],
+        "properties": { "workflow_id": { "type": "string" } }
+      }
+    },
+    {
+      "name": "freight_capacity_auction_check_readiness",
+      "description": "Check public core readiness; optional adapter degradation is reported elsewhere.",
+      "http": { "method": "GET", "path": "/health/ready", "auth": "public" },
+      "inputSchema": { "type": "object", "properties": {} }
+    }
+  ]
+}

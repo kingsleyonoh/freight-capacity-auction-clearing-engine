@@ -1,0 +1,138 @@
+name: freight-capacity-auction-clearing-engine
+
+x-app-common: &app-common
+  image: ghcr.io/kingsleyonoh/freight-capacity-auction-clearing-engine:${IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - path: .env
+      required: true
+  environment:
+    APP_ENV: production
+    APP_BASE_URL: https://freight-capacity-auction-clearing-engine.kingsleyonoh.com
+    APP_PORT: "8080"
+    DATABASE_URL: postgresql://freight_app:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/freight_auction
+    REDIS_URL: redis://redis:6379/0
+    REPLAY_STORE_PATH: /app/data/replay.duckdb
+    MIGRATIONS_AUTO_RUN: "false"
+    SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
+  volumes:
+    - freight_data:/app/data
+  networks:
+    - backend
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  migrate:
+    <<: *app-common
+    command: ["/app/bin/migrate.exe"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  app:
+    <<: *app-common
+    command: ["/app/bin/server.exe"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+      - traefik
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "traefik"
+      traefik.http.routers.freight-capacity-auction-clearing-engine.rule: "Host(`freight-capacity-auction-clearing-engine.kingsleyonoh.com`)"
+      traefik.http.routers.freight-capacity-auction-clearing-engine.entrypoints: "websecure"
+      traefik.http.routers.freight-capacity-auction-clearing-engine.tls: "true"
+      traefik.http.routers.freight-capacity-auction-clearing-engine.tls.certresolver: "letsencrypt"
+      traefik.http.services.freight-capacity-auction-clearing-engine.loadbalancer.server.port: "8080"
+
+  worker:
+    <<: *app-common
+    command: ["/app/bin/worker.exe"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: freight_auction
+      POSTGRES_USER: freight_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+  redis_data:
+  freight_data:
+
+networks:
+  backend:
+  traefik:
+    external: true
+    name: traefik

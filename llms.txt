@@ -1,0 +1,122 @@
+# Freight Capacity Auction Clearing Engine
+
+> Tenant-scoped marketplace for freight brokers and shipper logistics teams to import spot-capacity auctions, clear constraint-backed awards, explain every decision without leaking sealed bids, and replay policies against deterministic baselines.
+
+## Problem and Users
+
+Freight teams lose margin when spot awards optimize bid price while obscuring service risk, capacity constraints, reserve policies, fairness, and why losing bids were rejected. The engine freezes policy/solver evidence, ranks infeasibility relaxations, and compares replay results with baseline heuristics before policy promotion.
+
+Primary users: freight broker operations leaders, VP Logistics teams, freight procurement leads, auction managers, procurement analysts, tenant administrators, approvers, and carrier viewers limited to their own redacted bid history.
+
+## Quick Start
+
+1. Clone: `git clone https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine.git`
+2. Install OCaml/test dependencies: `opam switch create . 5.2.0 --deps-only --with-test`
+3. Install Tailwind/HTMX/Playwright tooling: `npm install`
+4. Configure: copy `.env.example` to `.env` and fill required local values.
+5. Start dependencies: `docker compose up -d postgres redis`
+6. Migrate and seed: `dune exec bin/migrate.exe && dune exec bin/setup.exe`
+7. Start the API/UI: `dune exec bin/server.exe`
+8. Start background work separately: `dune exec bin/worker.exe`
+
+Tests: `dune runtest --no-buffer && dune exec tests/integration/main.exe && npx playwright test`
+Static checks: `dune build @check`
+Format: `dune build @fmt --auto-promote`
+Build: `dune build @all`
+Golden replay: `dune exec bin/replay_bench.exe -- --fixture tests/fixtures/replay/golden_12_month.parquet`
+Solver smoke: `dune exec bin/solver_smoke.exe`
+
+## Architecture
+
+- OCaml 5.2.0 and Dune provide typed domain modules; Dream serves JSON APIs and server-rendered HTMX/Tailwind screens.
+- PostgreSQL 16 is canonical OLTP with explicit tenant ownership, tenant-leading indexes, status machines, and immutable JSONB evidence snapshots.
+- Redis handles queues, locks, retries, and short-lived progress; canonical job and auction state remains in PostgreSQL.
+- DuckDB handles historical CSV/Parquet replay and aggregation without becoming tenant authority.
+- MiniZinc runs behind a versioned process/artifact adapter; OR-Tools is an explicit process fallback. Production single-round clearing cannot silently fall back to heuristic fixtures.
+- Domain modules import downward through shared DB, Redis, HTTP, tenant context, error, and outbox boundaries. Optional adapters cannot become canonical state.
+- Every accepted, rejected, infeasible, relaxed, or overridden result records binding constraints and role-aware explanations. Carrier output redacts competitor amounts and internal solver values.
+
+## API Surface
+
+Auth legend: **Public** has no credential; **Refresh** uses the signed refresh cookie/JWT; **Tenant** accepts `X-API-Key` or UI Bearer JWT; **Tenant Admin** additionally requires the tenant-admin role; **Carrier** limits the principal to its own carrier; **Receiver** requires the configured webhook receiver token/HMAC.
+
+### Identity, tenant, and health
+
+- `POST /api/tenants/register` — Public when self-registration is enabled; create tenant and return API key once.
+- `POST /api/auth/refresh` — Refresh; issue a refreshed UI JWT.
+- `GET /tenants/me` — Tenant; return non-secret tenant profile/integration status.
+- `GET /health` — Public process liveness.
+- `GET /health/db` — Public PostgreSQL/migration health.
+- `GET /health/ready` — Public core readiness.
+
+### Auctions, bids, clearing, and awards
+
+- `GET /api/auctions` — Tenant; list/filter auctions.
+- `POST /api/auctions` — Tenant; create a draft auction.
+- `GET /api/auctions/{id}` — Tenant; auction detail.
+- `PATCH /api/auctions/{id}` — Tenant; update draft fields.
+- `POST /api/auctions/{id}/close-bidding` — Tenant; close the bid window and persist auto-clear choice.
+- `GET /api/auctions/{id}/bids` — Tenant; role-filtered bid list.
+- `POST /api/auctions/{id}/bids` — Tenant; submit an idempotent bid.
+- `POST /api/auctions/{id}/clear` — Tenant; queue constraint-backed clearing.
+- `GET /api/clearing-jobs/{id}` — Tenant; clearing progress/result.
+- `GET /api/auctions/{id}/awards` — Tenant; role-aware awards.
+- `POST /api/awards/{id}/approve` — Tenant with approval permission; approve an award/request.
+- `POST /api/awards/{id}/reject` — Tenant with approval permission; reject an award.
+- `GET /api/auctions/{id}/explanations` — Tenant; explanations from durable clearing decisions.
+- `GET /api/carrier/bids` — Carrier; own bids and redacted explanations only.
+- `POST /api/auctions/{id}/export` — Tenant; create a frozen CSV/JSON/HTML/PDF export artifact.
+- `GET /api/reports/{id}` — Tenant; retrieve a frozen report/export snapshot.
+
+### Imports and master data
+
+- `POST /api/imports` — Tenant; create multipart/JSON import run and staged preview.
+- `GET /api/imports/{id}` — Tenant; preview validation summary and row errors.
+- `POST /api/imports/{id}/commit` — Tenant; confirm normalized import rows.
+- `GET /api/carriers` — Tenant; list/filter carriers.
+- `POST /api/carriers` — Tenant with carrier-management permission; create carrier.
+- `GET /api/carriers/{id}` — Tenant; carrier detail.
+- `PATCH /api/carriers/{id}` — Tenant with carrier-management permission; update carrier/status.
+
+### Policies, replays, and audit
+
+- `GET /api/policies` — Tenant; list policies.
+- `POST /api/policies` — Tenant; create versioned policy draft.
+- `POST /api/policies/{id}/activate` — Tenant with policy permission; activate after replay evidence.
+- `GET /api/replays` — Tenant; list replay runs.
+- `POST /api/replays` — Tenant; create replay configuration.
+- `GET /api/replays/{id}` — Tenant; replay metrics and artifacts.
+- `GET /api/audit-events` — Tenant; filtered audit events.
+
+### Settings and integrations
+
+- `GET /api/settings/tenant` — Tenant Admin; retrieve tenant identity/settings.
+- `PATCH /api/settings/tenant` — Tenant Admin; update tenant identity/settings.
+- `GET /api/settings/users` — Tenant Admin; list users.
+- `POST /api/settings/users` — Tenant Admin; create user/role.
+- `GET /api/settings/users/{id}` — Tenant Admin; user detail.
+- `PATCH /api/settings/users/{id}` — Tenant Admin; update user/role.
+- `GET /api/settings/notifications` — Tenant; retrieve notification preferences.
+- `PATCH /api/settings/notifications` — Tenant; update non-critical preferences.
+- `GET /api/integration-settings` — Tenant Admin; retrieve non-secret adapter metadata.
+- `PATCH /api/integration-settings` — Tenant Admin; update enabled flags/env-var references.
+- `GET /api/integrations/health` — Tenant; independent optional-adapter status.
+- `POST /api/integrations/notification-hub/test` — Tenant; send fixture-safe test event.
+- `POST /api/integrations/workflow-engine/test` — Tenant; trigger one test workflow.
+- `POST /api/integrations/webhook-engine/bid-updates` — Receiver; authenticate and enqueue idempotent bid update.
+
+## Integrations
+
+- CSV/Parquet import: local preview → PostgreSQL staging/quarantine → explicit commit; replay datasets continue to DuckDB.
+- MiniZinc/OR-Tools: local process execution with timeout, versioned model/input/output artifacts, and fail-closed production semantics.
+- Event-Driven Notification Hub (optional, disabled by default): outbound `POST /api/events` using `NOTIFICATION_HUB_URL` and `NOTIFICATION_HUB_API_KEY`; failures use outbox/audit state and never roll back awards.
+- Workflow Automation Engine (optional, disabled by default): outbound `POST /api/workflows/{workflow_id}/execute` and `GET /api/executions/{execution_id}` using `WORKFLOW_ENGINE_*`; local approval remains canonical.
+- Webhook Ingestion & Replay Engine (optional, disabled by default): setup via its source/destination APIs; inbound delivery reaches `POST /api/integrations/webhook-engine/bid-updates` with `WEBHOOK_ENGINE_RECEIVER_SECRET` validation.
+- Observability: structured JSON stdout, optional Sentry/OpenTelemetry, Prometheus-style `/metrics`, optional PostHog, and readiness checks compatible with BetterStack/Pingdom.
+
+## Source
+
+- Repository origin: https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine.git
+- Binding PRD: docs/freight-capacity-auction-clearing-engine_prd.md
+- API specification: openapi.yaml
+- Agent context: AGENTS.md

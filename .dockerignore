@@ -1,0 +1,52 @@
+# Version control and editor state
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Klevar / agent-local operational state
+.agent
+.pi
+.yolo
+CLAUDE.md
+AGENTS.md
+.cursorrules
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OCaml / opam / Dune build products
+_build
+_opam
+*.install
+*.merlin
+
+# JavaScript asset and browser-test products
+node_modules
+.pnpm-store
+.yarn
+playwright-report
+test-results
+coverage
+
+# Runtime data (the production image uses /app/data volumes)
+data
+*.duckdb
+*.duckdb.wal
+*.log
+
+# Development-only material
+docs
+tests
+scripts
+README.md
+LICENSE
+npm-debug.log*
+yarn-error.log*

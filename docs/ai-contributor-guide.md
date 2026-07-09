@@ -16,13 +16,17 @@ Use this guide when contributing with Claude Code, Codex, Cursor, Pi, or another
 ```json
 {
   "schemaVersion": 1,
-  "task": "[API] Add survey export — PRD §8b",
+  "task": "[FEATURE] Add carrier-safe award explanation — PRD §5",
   "operator": "contributor:alice",
   "tool": "claude-code",
-  "branch": "feature/survey-export",
+  "branch": "feature/carrier-award-explanation",
   "status": "active",
-  "startedAt": "2026-05-18T15:30:00Z",
-  "expectedFiles": ["src/api/survey-export.ts"]
+  "startedAt": "2026-07-09T15:30:00Z",
+  "expectedFiles": [
+    "src/clearing/award_explanation.ml",
+    "src/clearing/award_explanation.mli",
+    "tests/unit/clearing/award_explanation_test.ml"
+  ]
 }
 ```
 

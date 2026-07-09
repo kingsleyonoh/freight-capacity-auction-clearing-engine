@@ -1,0 +1,64 @@
+{
+  "tenants": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Northstar Test Brokerage",
+      "legal_name": "Northstar Freight LLC",
+      "full_legal_name": "Northstar Freight Logistics, Limited Liability Company",
+      "display_name": "Northstar Freight Desk",
+      "address": {
+        "line1": "4800 Lakefront Avenue",
+        "city": "Cleveland",
+        "region": "OH",
+        "postal_code": "44114",
+        "country": "US"
+      },
+      "registration": {
+        "jurisdiction": "Ohio",
+        "broker_registration": "TEST-OH-1042",
+        "tax_id": "TEST-TAX-NORTHSTAR"
+      },
+      "contact": {
+        "email": "ops-northstar@example.test",
+        "phone": "+1-216-555-0101",
+        "support_url": "https://northstar.example.test/support",
+        "operations_contact": "Morgan Lake"
+      },
+      "wordmark": "/test-assets/northstar-wordmark.svg",
+      "brand_color": "#174A63",
+      "timezone": "America/New_York",
+      "default_currency": "USD",
+      "operator_license": "TEST-MC-104200"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Étoile Test Shipper",
+      "legal_name": "Étoile Logistique S.A.S.",
+      "full_legal_name": "Étoile Logistique et Transport, Société par Actions Simplifiée",
+      "display_name": "Étoile Capacity Operations Europe",
+      "address": {
+        "line1": "128 boulevard des Opérations Internationales",
+        "city": "Lyon",
+        "region": "Auvergne-Rhône-Alpes",
+        "postal_code": "69003",
+        "country": "FR"
+      },
+      "registration": {
+        "jurisdiction": "France",
+        "broker_registration": "TEST-FR-ÉTOILE-7788",
+        "tax_id": "TEST-TAX-ETOILE"
+      },
+      "contact": {
+        "email": "exploitation-etoile@example.test",
+        "phone": "+33-4-55-55-01-02",
+        "support_url": "https://etoile.example.test/aide",
+        "operations_contact": "Zoë Dubois"
+      },
+      "wordmark": "/test-assets/etoile-wordmark.svg",
+      "brand_color": "#7A2E52",
+      "timezone": "Europe/Paris",
+      "default_currency": "EUR",
+      "operator_license": "TEST-EU-OP-778800"
+    }
+  ]
+}

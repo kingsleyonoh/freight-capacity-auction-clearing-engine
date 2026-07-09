@@ -1,162 +1,142 @@
-# Freight Capacity Auction Clearing Engine — Coding Standards
+# Freight Capacity Auction Clearing Engine — Core Coding Standards
 
-> Part 1 of 5. Related rule files exist for meta, testing, live integration/E2E, and domain/security concerns. Load those files only when the task touches that surface.
+These rules are always active. Load `.agent/rules/_index.md` first and then the domain files governing the touched surface.
 
-These rules are ALWAYS ACTIVE. Follow them on every response without being asked.
+## Workflow Discipline
 
-## Workflow Pipeline Awareness
-- After completing ANY workflow, **read `.agent/workflows/PIPELINE.md`** and suggest the NEXT logical workflow based on the current context.
-- **PIPELINE.md is the single source of truth** for "what comes next." Individual workflows do NOT hardcode their next step — they defer to PIPELINE.md.
-- Never leave the user guessing what to do next. Always end with a clear next step.
-- **When creating a NEW workflow file**, ALWAYS add it to `PIPELINE.md` with its "When Done, Suggest" message.
-- **When deleting a workflow file**, ALWAYS remove it from `PIPELINE.md`.
-- `PIPELINE.md` must ALWAYS match the actual files in `.agent/workflows/`. If they're out of sync, fix `PIPELINE.md` immediately.
+- Implement only the explicit request or earliest eligible `docs/progress.md` work; no silent scope expansion.
+- Honor approval gates in conversation. Never use another tool's plan-mode files as a substitute.
+- After a workflow, read `.agent/workflows/PIPELINE.md` and state the next applicable workflow.
+- New/removed workflows must be reflected in `.agent/workflows/_index.md` and `PIPELINE.md`.
+- Keep workflow count bounded. Extend an existing workflow before creating a near-duplicate.
 
-## Workflow Approval Gates (CRITICAL — Prevents Plan Mode Errors)
-When a workflow step says "present to user", "wait for approval", or "approve before proceeding":
-1. Present the content directly as **formatted text in the conversation**.
-2. End with a clear question: `Approve? [yes / no / edit]`
-3. Wait for the user's response before proceeding to the next step.
-4. **NEVER call `ExitPlanMode` or `EnterPlanMode`** during workflow execution. These are Claude Code built-in tools for a separate system (toggled via `Shift+Tab`). Workflow approval gates are handled through direct conversation.
-5. **NEVER write to `.claude/plans/`** during workflow execution — that directory is reserved for Claude Code's built-in plan mode.
+## Project Architecture
 
-This applies to ALL approval gates: batch selection, implementation plans, RED/GREEN/REGRESSION evidence, commit approval, refactor plans, and any other "present and wait" step in any workflow.
+Planned source roots are `bin/`, `config/`, and `src/`; tests live under `tests/`; SQL migrations live under `migrations/`.
 
-## Domain-Specific Rules
+Imports point downward only:
 
-If your task touches any of the domains below, **also read the corresponding rules file before starting**. These files contain deeper conventions than fit here.
-
-| When working on... | Also read |
-|--------------------|-----------|
-| Authentication / sessions / permissions | `.agent/rules/auth_rules.md` (if exists) |
-| Database / migrations / queries | `.agent/rules/db_rules.md` (if exists) |
-| Background jobs / queues / scheduling | `.agent/rules/jobs_rules.md` (if exists) |
-| API endpoints / serializers / validation | `.agent/rules/api_rules.md` (if exists) |
-| UI / UX / frontend routes / templates / CSS / page copy / design tokens | `.agent/rules/FRONTEND_IMPECCABLE_RULES.md` |
-
-> These files are created by `/bootstrap` when a domain has 5+ concentrated conventions. If a file doesn't exist for a domain, the relevant rules are here in CODING_STANDARDS.md.
->
-> **When you create a new domain rules file or split an existing rules file:** update `.agent/rules/_index.md` with a new row. Pointer files at the project root (`CLAUDE.md`, `AGENTS.md`) reference the index — they do NOT list individual rules files. Adding a row to the index makes the new rule discoverable by every CLI without editing the pointer files.
-
-## Git Commit Convention
-
-**Format:** `type(scope): descriptive message`
-
-| Type | When to use |
-|------|------------|
-| `feat` | New feature or functionality |
-| `fix` | Bug fix |
-| `refactor` | Code restructuring without behavior change |
-| `test` | Adding or updating tests |
-| `docs` | Documentation changes |
-| `chore` | Tooling, workflows, config, dependencies |
-| `style` | Formatting, whitespace, no logic change |
-
-**Scope** = the module, app, or area affected (e.g., `pricing`, `auth`, `db`, `workflows`).
-
-**Rules:**
-- Subject line max 72 characters.
-- Use imperative mood: "add filter" not "added filter".
-- Reference the `[BUG]`/`[FIX]`/`[FEATURE]` from `progress.md` when applicable.
-- One commit per completed item. Don't bundle unrelated changes.
-
-**Examples:**
-```
-feat(pricing): implement UndercutBracket model with tenant FK
-fix(sending): guard against None accounts on sending page
-refactor(db): extract monitoring queries into dedicated mixin
-test(replies): add 11 tests for intent classification edge cases
-docs(context): update CODEBASE_CONTEXT.md with new schema tables
-chore(workflows): add sprint velocity to resume workflow
+```text
+shared → none
+auth → shared
+tenants, carriers, policies → shared, auth
+imports → shared, auth, tenants, carriers, policies
+auctions → shared, auth, tenants, carriers, policies, imports
+solver → shared
+clearing → shared, auctions, carriers, policies, solver
+approvals → shared, auth, clearing, integrations
+replays → shared, auctions, policies, clearing, solver
+reports → shared, tenants, auctions, clearing, approvals
+notifications → shared, auth, tenants, auctions, approvals, reports
+integrations → shared, auth, auctions, approvals, notifications
+jobs → shared plus owning domain services
+ui → shared, auth, and domain service interfaces
 ```
 
-## AI Discipline Rules (Prevent Common AI Failures)
+- Domain modules never create their own PostgreSQL pool, Redis connection policy, outbound retry policy, or tenant resolver.
+- Dream handlers are thin: resolve request/tenant, validate input, call one service boundary, render HTML/HTMX or serialize JSON.
+- Business rules remain pure where practical and return typed results; side effects are performed by service/adaptor modules.
+- MiniZinc, OR-Tools, DuckDB CLI, and external HTTP are typed process/HTTP boundaries. Never scatter shell commands through domain code.
+- Server-rendered UI is not a SPA. HTMX enhances forms/fragments; authoritative state remains server/PostgreSQL backed.
+- Read `CODEBASE_CONTEXT*.md` and the relevant domain rules before changing architecture.
 
-### No Scope Creep
-- **ONLY implement what's asked or what's next in `docs/progress.md`.** Do not add features, helpers, utilities, or "nice-to-haves" that aren't in the spec.
-- If you think something SHOULD be added, ASK the user first. Never add it silently.
+## Imports, Naming, and OCaml Shape
 
-### No Phantom Dependencies
-- **NEVER import a package that isn't in the dependency file** (requirements.txt / package.json / etc). Add it FIRST, then use it.
-- Before using any library method, **verify it exists** in that version. Don't hallucinate API methods.
+- Order `open`/imports conceptually as standard library, third-party libraries, then project modules; prefer qualified module names over broad `open` at file scope.
+- Every `.ml` with a reusable public contract has a deliberate `.mli`; hide constructors and internal solver/database representations.
+- Files/modules and values use `snake_case`; modules/types/constructors use `PascalCase`; constants/env names use `UPPER_SNAKE_CASE`.
+- Use explicit result/error types at boundaries. Do not use exceptions for expected validation, authorization, infeasibility, or adapter outcomes.
+- Keep Lwt boundaries visible; do not block the Dream event loop with solver, DuckDB, or file processing.
+- Use Dune libraries to enforce dependency direction. Cycles and upward imports are architecture defects.
 
-### No Placeholder Code
-- **NEVER write `# TODO`, `pass`, `...`, or `NotImplementedError`** as final code. Every function must be fully implemented before marking the task done.
+## AI Discipline
 
-### No Hallucinated APIs
-- Before calling any external library method, **verify the method exists** by checking docs or the installed package.
-- If unsure, say so and check rather than assuming.
+### Scope and Dependencies
+- Do not add features, helpers, packages, or abstractions absent from the PRD/task. Ask first.
+- Search by name, path, exports, and foundation catalog before creating a file/function/module.
+- Add dependencies to the `.opam`, Dune, or `package.json` manifest before import/use; verify the API for the pinned version.
+- Do not abstract until two concrete consumers establish the contract.
 
-### No Silent Failures
-- **NEVER write code that swallows errors silently.** Every `except`/`catch` block must either re-raise, log, or return a meaningful error.
-- `except: pass` / `catch {}` is permanently BANNED.
+### No Placeholder or Fabricated Code
+- No final `TODO`, `FIXME`, `HACK`, ellipsis, placeholder implementation, unconditional success, or fake result.
+- Never fabricate test output, logs, screenshots, solver artifacts, benchmark numbers, or external responses.
+- Heuristic/recorded solver fixtures cannot satisfy production `single_round_spot` clearing success.
 
-### No Silent Workarounds (CRITICAL — Prevents Hidden Schema/Spec Gaps)
-- **NEVER hardcode a value that should come from config, schema, or API response** to "make the test pass."
-- Template token fails to resolve? Schema field missing? Context API missing data? **STOP.** Either (1) extend the schema in this batch if PRD already specifies the field, or (2) escalate as `SILENT_WORKAROUND` and wait for user decision.
-- Banned pattern: literal tenant/customer identity strings (names, addresses, emails, registrations, legal boilerplate, wordmarks) written into templates, emails, invoices, legal docs, or any config-driven surface. Single-tenant fixtures mask this — it leaks in production.
-- **Also banned:** silently compacting/shrinking/truncating a file to hit a size limit (dropping bullets from a rules file, collapsing entries in a catalog, removing rows from a table to fit under 10K). The fix for an oversized knowledge file is the directory-per-kind pattern below, not truncation.
-- Applies manual + `/implement-next` + `/yolo`. See `yolo-honesty-checks.md` §8 for the full trigger table, rejected-pattern examples, and Option A/B/C routing.
-
-### Append-Only Knowledge Files Banned (CRITICAL — Prevents Recurring Splits)
-- **NEVER create or grow a single file that accumulates entries of unbounded cardinality.** New gotcha → new file. New pattern → new file. New module → new file. New foundation primitive → new file. New build-journal batch → new file.
-- Canonical directory-per-kind locations:
-  - `.agent/knowledge/patterns/` — one file per pattern (filename `NNN-slug.md`)
-  - `.agent/knowledge/gotchas/` — one file per gotcha (filename `YYYY-MM-DD-slug.md`)
-  - `.agent/knowledge/modules/` — one file per module (filename mirrors source path)
-  - `.agent/knowledge/foundation/` — one file per foundation primitive (filename `category-slug.md`)
-  - `.agent/knowledge/checks/` — one file per project-local enforcement check (filename `{failure_type}-{slug}.md`, lowercase hyphenated). Written by `yolo-subagent-reinforce` after recurring failures; read by implement sub-agent's Step 4 plan-validation; retire-able via `/audit-reinforcements`.
-  - `docs/build-journal/` — one file per batch (filename `NNN-batch.md`)
-- Each directory has an `_index.md` catalog that the AI rewrites when siblings are added, renamed, or removed. The index is a catalog, not a growing file — it tracks directory membership, nothing more.
-- **Exempt from this rule** (bounded cardinality, safe as single files): `CODING_STANDARDS*.md` (fixed taxonomy of rule categories), workflow stubs, `CODEBASE_CONTEXT.md` tech-stack / commands / env-vars tables, PRD sections.
-- **When unsure whether cardinality is bounded:** assume unbounded and use a directory. A project with 3 patterns today has 30 in a year; one file per pattern scales, one row per pattern in a table does not.
-- Violations show up as recurring "split this file" work every few batches. The split is firefighting — the fire is the append-only architecture. See `MAINTAINING.md` — "Append-Only Knowledge Files Banned" for migration guidance.
-
-### No Over-Engineering
-- Match the spec's complexity level. No abstractions without 2+ concrete implementations.
-- Build for the scale defined in the spec, not 100x that.
+### No Silent Workarounds
+- Never hardcode a value that belongs in schema, config, a snapshot, or an adapter response.
+- Missing tenant/report token backing data is a schema gap: extend only when the PRD specifies it; otherwise stop and escalate.
+- Do not swallow errors. Every caught error is typed/returned, logged with safe context, or re-raised at the proper boundary.
+- Never truncate rules or knowledge to meet a size limit. Split bounded rules by concern; use directory-per-item knowledge.
 
 ### Verify Before Claiming
-- **NEVER say "done" or "all tests pass" without actually running the tests** and showing the output.
-- **NEVER say "this follows the spec" without having read the relevant section** in this session.
-- If you haven't read a file in this conversation, you don't know what's in it. Read it first.
+- Read the binding PRD/rule section before claiming compliance.
+- Run the exact relevant command and retain output before saying tests/checks pass.
+- Distinguish planned paths, fixture evidence, and live production-path evidence.
+- A created module is incomplete until reachable from a registered entry point.
 
-### Hardcoded Secrets Banned (CRITICAL)
-NEVER write real API keys, tokens, passwords, JWTs, or signing secrets as string literals in any tracked file (including `.yolo/`). Read from env or vault. Pre-commit scanner: `scripts/scan-secrets.ps1`. Full rule + pattern catalogue + recovery flow → `CODING_STANDARDS_DOMAIN.md` § Secrets Management. YOLO-specific routing → `yolo-honesty-checks.md` Section 11.
+## Tenant and Security Invariants
 
-### Respect .gitignore (CRITICAL — Prevents Accidental Exposure)
-- **NEVER run `git add -f` on ANY file.** If a file is gitignored, it is gitignored ON PURPOSE.
-- `docs/progress.md`, `docs/build-journal/`, `docs/architect_journal.md`, `.agent/workflows/`, `.agent/guides/`, `.agent/agents/`, `.agent/.last-sync`, `.yolo/`, `.claude/`, and PRD files are LOCAL working files (tracked during dev via the `⚠️ TRACKED DURING DEV` pattern, stripped by `/prepare-public`). They must NEVER end up in a public release.
-- **Proprietary files are tracked during development** so all platforms can reference them. `.gitignore` has commented-out entries marked `⚠️ TRACKED DURING DEV` — this is the default. Run `/prepare-public` before making the repo public.
-- If `git status` doesn't show a file as staged after `git add .`, that means `.gitignore` is working correctly. **Do not "fix" it.**
-- The ONLY acceptable staging command is `git add .` (which respects `.gitignore`).
+- Every data-bearing record belongs to exactly one tenant; UUID lookup alone never authorizes access.
+- Tenant context is explicit in UI/API/jobs/replays/reports/integrations. Every query and useful composite index leads with `tenant_id`.
+- Permissions fail closed; carrier viewers are constrained to their own `carrier_id`.
+- Sealed competitor bids, key hashes, password hashes, secrets, raw adapter errors, and solver internals never leak through carrier/public views.
+- Reports and exports render from immutable snapshots with strict missing-field behavior.
+- Secrets are environment-only. Never write real credentials in source, tests, fixtures, docs, reports, or local agent artifacts.
+- Use parameterized Caqti queries; escape output through the server-rendering layer; validate upload size/type and all boundary input.
+- Full security rules: `CODING_STANDARDS_DOMAIN.md`, `auth_rules.md`, `db_rules.md`, `api_rules.md`.
 
-### Lean Read Rule (CRITICAL — Prevents Context Bloat)
-- **Do not treat workflow read instructions as automatic full-file reads.** Main agents read the smallest sufficient governance/orchestration context first: headings, matching task entry, referenced PRD section, Mesh artifacts, or the specific rule section that applies.
-- Source/test/config discovery, source-changing edits, tests, and evidence-sensitive validation default to delegated Mesh workers, even for small or single-file fixes. Direct main-agent source/test/config reads or edits are limited to explicit firewall exceptions: Mesh unavailable/broken, user refuses Mesh and confirms context-risk, emergency safety intervention with minimum direct inspection, or governance/Mesh artifact reads needed to orchestrate.
-- Read an entire file only when it is small, you will substantially edit/rewrite it, the task is broad/cross-cutting/safety-sensitive, or targeted reading leaves uncertainty; for source/test/config files, this instruction applies inside the delegated worker lane by default.
-- For PRDs and `progress.md`, prefer heading/section search plus the selected item context over full-document reads during ordinary feature implementation.
-- For source files, workers read the whole file when modifying it heavily; otherwise they read the relevant function/module and surrounding context.
+## TDD and Anti-Cheat
 
-### Read Shared Foundation When Touching Shared Primitives (CRITICAL — Prevents Duplication)
-- Before writing a new utility, helper, middleware, handler, component, or shared pattern, search `CODEBASE_CONTEXT.md` and `.agent/knowledge/foundation/_index.md` for the relevant primitive.
-- Read only the matching foundation file(s) unless the change spans the shared architecture broadly.
-- If a pattern, function, or module already exists there — **USE IT.** Do not recreate it.
+- Tests first: demonstrate RED, implement the minimum GREEN, then run regression. A setup-only item may document why no behavioral RED exists.
+- Never weaken/delete/skip a failing test or modify expected behavior merely to go green.
+- Test production paths. Do not replace PostgreSQL with SQLite, Redis with memory, migrations with hand-built schemas, or production seed/import paths with direct inserts.
+- Every happy path has an unhappy-path companion. Tenant-scoped suites use both tenants in `tests/fixtures/tenants.json`.
+- Use Alcotest/OUnit2 for OCaml logic, the PostgreSQL/Redis integration harness for boundaries, and Playwright for real HTTP/browser journeys.
+- Full testing rules: `CODING_STANDARDS_TESTING*.md`.
 
-### Workflow Discipline
-- **Max 30 workflow files** in `.agent/workflows/`. If approaching 30, retire rarely-used workflows or convert procedural knowledge to reusable global skills.
-- Before creating a new workflow, check if an existing one can be extended.
+## Shared Foundation and Knowledge
 
-### Search Before Creating (CRITICAL — Prevents Duplicate Code)
-- **Before creating ANY new file, function, class, or utility**, search the codebase first:
-  1. Search file contents for the function/class name
-  2. Search for the file by name
-  3. Check relevant module exports / `__init__` files
-- If it already exists, **USE IT**. Do not recreate it.
-- If a similar function exists, **extend it** — don't create a parallel version.
-- When in doubt, **ASK the user**: "I can't find X — does it exist, or should I create it?"
+Before creating shared code:
 
-## File Size Limits
-- **Max 800 lines** per source file. If approaching 700, plan to split.
-- **Max 50 lines** per function/method.
-- **Max 200 lines** per class.
+1. Read `CODEBASE_CONTEXT*.md`.
+2. Read `.agent/knowledge/foundation/_index.md`.
+3. Read the matching foundation item in full.
+4. Reuse the established primitive or create one bounded primitive plus index entry when the task requires it.
+
+Unbounded knowledge is directory-per-item:
+
+- `.agent/knowledge/patterns/NNN-slug.md`
+- `.agent/knowledge/gotchas/YYYY-MM-DD-slug.md`
+- `.agent/knowledge/modules/<source-path>.md`
+- `.agent/knowledge/foundation/category-slug.md`
+- `.agent/knowledge/checks/failure-type-slug.md`
+- `docs/build-journal/NNN-batch.md`
+
+Rewrite each directory's `_index.md` when membership changes. Never create a flat accumulating knowledge table.
+
+## File and Function Limits
+
+- Every `.agent/rules/*.md` file: fewer than 10,000 characters.
+- Source/test file: max 800 lines; reassess at 700.
+- Function: max 50 lines; keep Dream handlers substantially smaller.
+- One module responsibility per file. Split by responsibility before adding another concern.
+- Public module contracts must remain smaller than implementations and expose only required types/functions.
+
+## Git and Collaboration
+
+- `main` is production; `dev` is integration; contributor work uses `feature/<slug>`; emergency work uses `hotfix/<slug>`.
+- Never commit/push without explicit approval. Never use `git add -f`; respect `.gitignore`.
+- Commit format: `type(scope): imperative summary`, max 72 characters. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`.
+- One cohesive completed item per commit; do not mix unrelated edits.
+- Respect active `docs/claims/*.json`; do not edit another operator's expected files.
+
+## Production Readiness
+
+Before merge to `main`:
+
+1. `dune build @check`, `dune build @all`, unit, integration, and applicable Playwright suites pass.
+2. Migrations are ordered, committed, and exercised against PostgreSQL 16.
+3. New env vars are documented with safe empty/example values.
+4. No debug output, unresolved markers, silent catches, unwired modules, or secrets remain.
+5. UI work includes keyboard, responsive, privacy/redaction, state, and accessibility evidence.
+6. Production clearing proves real solver model/output artifacts; optional adapter failures cannot change canonical auction state.

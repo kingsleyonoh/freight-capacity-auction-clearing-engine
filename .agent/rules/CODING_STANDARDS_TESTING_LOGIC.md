@@ -1,81 +1,59 @@
-# Freight Capacity Auction Clearing Engine — Coding Standards: Testing Logic & Correctness
+# Freight Capacity Auction Clearing Engine — Logic and Correctness Testing
 
-> Part 4 of 7. Related core/meta/testing/live/E2E/domain rules exist; load them only when the task touches those surfaces.
-> This file covers business logic correctness, edge cases, modularity, multi-tenant fixtures, and business-context testing.
+## Mandatory Two-Tenant Fixture
 
-## Performance Awareness
-- Correctness tests alone don't catch latency regressions — a page can pass all tests while making 10x the necessary network calls.
-- When a single page/endpoint triggers 3+ backend operations, consider asserting call count or response time.
-- After every batch of 5+ features, do a compound load check: load real pages and verify total I/O matches expectations.
+Every suite touching scoped data loads at least two records from `tests/fixtures/tenants.json`. Identity values must differ for `legal_name`, `full_legal_name`, `display_name`, address, registration, contact, wordmark, brand color, timezone, currency, and operator license.
 
-## Multi-Tenant Fixtures Mandatory (CRITICAL — Catches Cross-Tenant Leakage)
+For each scoped UI/API/query/job/report/integration test:
 
-If the project is multi-tenant (PRD §2 Architecture Principles mandates `tenant_id`), every test suite that touches tenant-scoped data MUST load **at least TWO distinct tenants** with different literal values for every tenant-identity column (legal_name, full_legal_name, display_name, address, registration, contact, wordmark).
+- prove Tenant A cannot read/mutate Tenant B and vice versa;
+- include overlapping carrier/load/auction names to defeat accidental name scoping;
+- parametrize report/template rendering over both tenants;
+- scan each rendered artifact for every other-tenant literal and fail with `TENANT_IDENTITY_LEAK` plus field/path;
+- test carrier viewers are restricted by both `tenant_id` and `carrier_id`.
 
-**Why:** A template that hardcodes "Acme Corp LLC" passes every test when the fixture only loads Acme. It fails the moment Globex is onboarded. Two-tenant fixtures expose this at RED phase, not in production.
+## Business Correctness Matrix
 
-**Rules:**
+| Area | Canonical rule / source of truth | Internal-only values | Observable paths to compare |
+|---|---|---|---|
+| Auth | resolved active tenant/user and `permission_matrix` | key/password hashes, JWT internals | UI, API, jobs, callbacks, audit |
+| Intake | only eligible, timely, unique bids from active compatible carriers enter clearing | parser collision hashes | preview, DB, solver input, audit |
+| Clearing | awards satisfy captured policy/input and real solver artifacts | variable names, matrix indexes, competitor prices | DB, UI, API, export, audit |
+| Approval | approval-required awards cannot publish/export before canonical approval | workflow key/retry internals | UI, API, export, notifications |
+| Replay | replay never mutates live awards or emits external carrier events | DuckDB temp names | replay UI/report/audit/outbox |
+| Reports | explanation matches durable decision and frozen snapshot; role redaction holds | raw coefficients/competitor amounts | operator/carrier UI, API, CSV/JSON/HTML |
+| Integrations | optional failures do not change canonical domain state | secrets/raw error bodies | health, outbox, logs, audit |
+| Notifications | notifications mirror domain state and respect preferences/critical rules | API keys/retry internals | bell/settings/outbox/audit |
 
-1. **Fixtures file (`tests/fixtures/tenants.*` or equivalent) MUST define >=2 tenants** with intentionally-different identity values. Include edge cases: non-ASCII characters, longer addresses, different jurisdictions.
-2. **Template / email / invoice / PDF tests MUST parametrize over both tenants** (pytest parametrize, table-driven tests, etc.) and assert that rendering Tenant A's snapshot does NOT include any Tenant B literal value and vice versa.
-3. **Cross-tenant leakage grep (runs in suite):** Add a test that reads the generated artifact and greps for EVERY literal identity value of the OTHER tenant. Any match fails the test with message `TENANT_IDENTITY_LEAK: field=X expected=A actual_included=B`.
-4. **Tenant isolation test per module:** Category 6 in the Test Quality Checklist becomes MANDATORY. Every query, every API response, every job run must be asserted to respect `tenant_id` scoping.
+Every feature test names its rule, source of truth, observable paths, and a wrong-but-running failure mode.
 
-**This rule is non-optional for config-driven surfaces.** Skipping it means the template-hardcoding bug class will re-occur project-by-project until tests catch it at RED.
+## Auction/Solver Cases
 
-## Edge Case Coverage Guide
+- Exercise all status transitions and reject invalid transitions.
+- Golden fixtures cover reserve, equipment, capacity, service risk, carrier share, sealed-bid redaction, unassigned loads, and deterministic ties.
+- Production `single_round_spot` requires versioned model and output artifacts; solver timeout/non-zero fails closed.
+- Infeasible cases persist unsat evidence and ranked relaxation suggestions; no silent relaxation or publication.
+- Scenario replay may use heuristic baseline only under the PRD's explicit replay/benchmark allowance.
+- Compare repeated runs using frozen input/policy hash and deterministic expected decisions.
 
-### Models
-- Every field from the spec → at least 1 test per constraint.
-- Every FK → test CASCADE behavior.
-- Every choice field → test all valid values + 1 invalid value.
+## Import, Queue, and Adapter Cases
 
-### Services (when applicable)
-- Boundary values (min, max, zero, negative).
-- Invalid input types.
-- Idempotency (running twice = same result).
-- Mock external API failures.
+- Import preview persists staging/error/quarantine evidence before commit; commit is idempotent.
+- Unknown/suspended carriers, late/duplicate bids, wrong equipment, oversized files, malformed rows, schema drift, and cross-tenant IDs are covered.
+- Jobs test retry, duplicate delivery, lock expiry, worker restart, and exactly-once canonical outcome.
+- Optional adapters test disabled, timeout, 429/retry, non-2xx, duplicate callback, malformed signature, and unknown event behavior.
 
-### Views/Pages (when applicable)
-- Authenticated vs unauthenticated access.
-- Correct HTTP methods (GET/POST/PUT/DELETE).
-- Response format validation.
-- Tenant scoping (if multi-tenant).
+## Boundary and Performance Awareness
 
-## Test Modularity Rules
-1. **One test class per model/service** — never mix models in one class.
-2. **Max 800 lines per test file** — split if larger.
-3. **`setUp` creates only what that class needs** — no global fixtures.
-4. **Tests are independent** — no shared state, no ordering dependency.
-5. **Any single test can run in isolation** — `python -m pytest tests/test_x.py::TestClass::test_method`.
-6. **Test names describe business behavior** — not technical actions.
-7. **No test helpers longer than 10 lines** — extract to a `tests/factories.py` if needed.
+- Numeric constraints cover zero, negative, exact boundary, and overflow/precision behavior.
+- Timestamp tests include cutoff equality, tenant timezone rendering, invalid windows, and UTC persistence.
+- UUID/resource-not-found tests must not reveal cross-tenant existence.
+- After a route/page reaches three or more I/O operations, measure/query-count or trace the path. After five related features, run a compound-load check.
 
-## Business-Context Testing
-- Tests must reflect the BUSINESS PURPOSE described in the spec.
-- Every test must answer: Does this protect data? Apply rules correctly? Handle failure? Match the spec?
-- Test names must describe business behavior, not technical actions.
+## Test Modularity
 
-## Business Logic Correctness Testing
-
-Unit, integration, and E2E tests are not sufficient if they only prove that code executes. Every feature must also test whether the business outcome is logically correct.
-
-A business logic correctness test is required when a feature:
-- creates or displays a client-facing identifier
-- calculates totals, balances, taxes, discounts, deadlines, or limits
-- changes status or lifecycle state
-- authorizes or denies an action
-- emits events, webhooks, notifications, exports, reports, or generated artifacts
-- writes data later consumed by a job, cache, search index, report, or reconciliation flow
-- renders the same business entity through multiple paths
-- stores both internal values and external/public values
-
-The test must:
-1. Create or mutate real data through the production path.
-2. Assert the canonical business rule, not only the implementation detail.
-3. Observe every relevant path where the rule is externally visible or consumed.
-4. Assert internal-only values do not leak.
-5. Assert derived values use one source of truth or one shared calculation path.
-6. Include at least one failure-mode test showing the rule would catch a wrong-but-running system.
-
-Example: an invoice-like document has one public identity. Its raw numeric sequence may exist for allocation, but it is internal-only. PDF/HTML, public page, API response, email payload, webhook/event payload, XML/e-invoice payload, payment metadata, and reconciliation/export rows must all use the public identity, and the test must fail if one path emits the raw sequence instead.
+- One behavior/module focus per test file; maximum 800 lines.
+- Helpers stay small; reusable factories/builders belong under `tests/fixtures` or dedicated test support modules.
+- Tests are independent, order-free, and individually runnable through Dune aliases/executables.
+- Names describe freight business outcomes, not implementation calls.
+- Cleanup uses rollback or explicit tenant-scoped cleanup; no shared mutable fixture state.

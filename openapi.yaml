@@ -1,0 +1,845 @@
+openapi: "3.1.0"
+info:
+  title: Freight Capacity Auction Clearing Engine API
+  version: "0.1.0"
+  description: Tenant-scoped freight auction intake, clearing, explanation, replay, reporting, and optional integration API.
+  contact:
+    name: Kingsley Onoh
+    url: https://kingsleyonoh.com
+  x-repository: https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine.git
+  x-product-requirements: docs/freight-capacity-auction-clearing-engine_prd.md
+servers:
+  - url: http://localhost:8080
+    description: Local development
+tags:
+  - name: Identity
+  - name: Auctions
+  - name: Imports
+  - name: Clearing
+  - name: Awards
+  - name: Reports
+  - name: Policies
+  - name: Carriers
+  - name: Replays
+  - name: Audit
+  - name: Settings
+  - name: Integrations
+  - name: Health
+paths:
+  /api/tenants/register:
+    post:
+      tags: [Identity]
+      operationId: registerTenant
+      summary: Register a tenant when self-registration is enabled
+      description: "Public when SELF_REGISTRATION_ENABLED=true. Request: {name, legal_name?, contact?}. Returns the API key once."
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/auth/refresh:
+    post:
+      tags: [Identity]
+      operationId: refreshUiToken
+      summary: Refresh the short-lived UI JWT
+      description: Uses the signed refresh cookie or refresh JWT and rejects inactive users or tenants.
+      security:
+        - RefreshCookie: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "401":
+          $ref: "#/components/responses/Error"
+  /tenants/me:
+    get:
+      tags: [Identity]
+      operationId: getCurrentTenant
+      summary: Get the current non-secret tenant profile
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/auctions:
+    get:
+      tags: [Auctions]
+      operationId: listAuctions
+      summary: List tenant auctions with cursor pagination and filters
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    post:
+      tags: [Auctions]
+      operationId: createAuction
+      summary: Create a draft auction
+      description: "Request: {name, mode, bid_open_at, bid_close_at, policy_id}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Auctions]
+      operationId: getAuction
+      summary: Get tenant-scoped auction detail
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Auctions]
+      operationId: updateDraftAuction
+      summary: Update mutable draft auction fields
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/close-bidding:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Auctions]
+      operationId: closeAuctionBidding
+      summary: Close bidding and persist the auto-clear choice
+      description: "Request: {auto_queue_clearing}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: auctions.close
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/imports:
+    post:
+      tags: [Imports]
+      operationId: createImportRun
+      summary: Upload or submit data for staged import preview
+      description: Accepts multipart or JSON with resource_type, optional auction_id, file, and mapping.
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: imports.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/JsonRequest"
+      responses:
+        "202":
+          $ref: "#/components/responses/JsonAccepted"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/imports/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Imports]
+      operationId: getImportPreview
+      summary: Get import validation summary, staged rows, and row errors
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: imports.read
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/imports/{id}/commit:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Imports]
+      operationId: commitImportRun
+      summary: Commit confirmed valid staged import rows
+      description: "Request: {confirm: true}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: imports.commit
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/bids:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Auctions]
+      operationId: listAuctionBids
+      summary: List auction bids with role-aware sealed-bid filtering
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    post:
+      tags: [Auctions]
+      operationId: submitAuctionBid
+      summary: Submit an idempotent auction bid
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/clear:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Clearing]
+      operationId: clearAuction
+      summary: Queue a constraint-backed auction clearing job
+      description: "Request: {policy_id?, solver_backend?, dry_run?}. Production single-round clearing requires solver artifacts."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: auctions.clear
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "202":
+          $ref: "#/components/responses/JsonAccepted"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/clearing-jobs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Clearing]
+      operationId: getClearingJob
+      summary: Get tenant-scoped clearing progress and result
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/awards:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Awards]
+      operationId: listAuctionAwards
+      summary: List role-aware proposed and final awards
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+  /api/awards/{id}/approve:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Awards]
+      operationId: approveAward
+      summary: Approve an approval-required award
+      description: "Request: {decision, note}. Requires approval permission."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: awards.approve
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/awards/{id}/reject:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Awards]
+      operationId: rejectAward
+      summary: Reject an approval-required award
+      description: "Request: {reason}. Requires approval permission."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: awards.approve
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/explanations:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Clearing]
+      operationId: getAuctionExplanations
+      summary: Get role-redacted explanations from clearing decisions
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+  /api/carrier/bids:
+    get:
+      tags: [Awards]
+      operationId: getCarrierOwnBids
+      summary: Get the authenticated carrier's bids and redacted explanations
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: carrier_viewer
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/auctions/{id}/export:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Reports]
+      operationId: exportAuction
+      summary: Create an export artifact backed by a frozen report snapshot
+      description: "Request: {format}. Approval-required awards remain blocked until approved."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "202":
+          $ref: "#/components/responses/JsonAccepted"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/reports/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Reports]
+      operationId: getReport
+      summary: Get a frozen report or export snapshot
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/policies:
+    get:
+      tags: [Policies]
+      operationId: listPolicies
+      summary: List tenant auction policies
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    post:
+      tags: [Policies]
+      operationId: createPolicy
+      summary: Create a versioned draft auction policy
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/policies/{id}/activate:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Policies]
+      operationId: activatePolicy
+      summary: Activate a policy after replay-gate evidence passes
+      description: "Request: {note}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: policies.activate
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/carriers:
+    get:
+      tags: [Carriers]
+      operationId: listCarriers
+      summary: List tenant carriers with pagination and filters
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    post:
+      tags: [Carriers]
+      operationId: createCarrier
+      summary: Create a tenant carrier master-data record
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: carriers.manage
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/carriers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Carriers]
+      operationId: getCarrier
+      summary: Get a tenant-scoped carrier profile
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Carriers]
+      operationId: updateCarrier
+      summary: Update a carrier profile or status
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: carriers.manage
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/replays:
+    get:
+      tags: [Replays]
+      operationId: listReplays
+      summary: List tenant replay runs
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    post:
+      tags: [Replays]
+      operationId: createReplay
+      summary: Create a replay run from dataset, policy, baseline, and window
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "202":
+          $ref: "#/components/responses/JsonAccepted"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/replays/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Replays]
+      operationId: getReplay
+      summary: Get replay lifecycle, metrics, comparisons, and artifacts
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/audit-events:
+    get:
+      tags: [Audit]
+      operationId: listAuditEvents
+      summary: List tenant audit events with filters and pagination
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-permission: audit_reports.view
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+  /api/settings/tenant:
+    get:
+      tags: [Settings]
+      operationId: getTenantSettings
+      summary: Get tenant identity and settings
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Settings]
+      operationId: updateTenantSettings
+      summary: Update tenant identity and settings
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/settings/users:
+    get:
+      tags: [Settings]
+      operationId: listTenantUsers
+      summary: List tenant users and roles
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Settings]
+      operationId: createTenantUser
+      summary: Create a tenant user and assign a role
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/JsonCreated"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/settings/users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Settings]
+      operationId: getTenantUser
+      summary: Get a tenant user and role
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Settings]
+      operationId: updateTenantUser
+      summary: Update a tenant user or role
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/settings/notifications:
+    get:
+      tags: [Settings]
+      operationId: getNotificationSettings
+      summary: Get notification preferences for the current user
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+    patch:
+      tags: [Settings]
+      operationId: updateNotificationSettings
+      summary: Update non-critical notification preferences
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/integration-settings:
+    get:
+      tags: [Integrations]
+      operationId: getIntegrationSettings
+      summary: Get non-secret optional-adapter settings
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Integrations]
+      operationId: updateIntegrationSettings
+      summary: Update adapter enabled flags and environment-variable references
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/integrations/health:
+    get:
+      tags: [Integrations]
+      operationId: getIntegrationHealth
+      summary: Get independent optional-adapter health without changing core readiness
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+  /api/integrations/notification-hub/test:
+    post:
+      tags: [Integrations]
+      operationId: testNotificationHub
+      summary: Send a fixture-safe Notification Hub test event
+      description: "Request: {event_type?}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "424":
+          $ref: "#/components/responses/Error"
+  /api/integrations/workflow-engine/test:
+    post:
+      tags: [Integrations]
+      operationId: testWorkflowEngine
+      summary: Trigger one idempotent Workflow Engine test execution
+      description: "Request: {workflow_id}."
+      security:
+        - TenantApiKey: []
+        - BearerAuth: []
+      x-required-role: tenant_admin
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "424":
+          $ref: "#/components/responses/Error"
+  /api/integrations/webhook-engine/bid-updates:
+    post:
+      tags: [Integrations]
+      operationId: receiveWebhookEngineBidUpdate
+      summary: Authenticate and enqueue an idempotent Webhook Engine bid update
+      security:
+        - WebhookSignature: []
+      requestBody:
+        $ref: "#/components/requestBodies/JsonRequestBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "401":
+          $ref: "#/components/responses/Error"
+  /health:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      summary: Check process liveness
+      security: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+  /health/db:
+    get:
+      tags: [Health]
+      operationId: getDatabaseHealth
+      summary: Check PostgreSQL reachability and current migrations
+      security: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "503":
+          $ref: "#/components/responses/Error"
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      summary: Check core application readiness and required Redis availability
+      security: []
+      responses:
+        "200":
+          $ref: "#/components/responses/JsonOk"
+        "503":
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    TenantApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Tenant API key resolved to one active tenant.
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived UI JWT with tenant_id, user_id, and role claims.
+    RefreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: Signed short-lived refresh cookie/JWT.
+    WebhookSignature:
+      type: apiKey
+      in: header
+      name: X-Webhook-Signature
+      description: Receiver token or HMAC derived from WEBHOOK_ENGINE_RECEIVER_SECRET.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Tenant-scoped resource UUID.
+      schema:
+        type: string
+        format: uuid
+  requestBodies:
+    JsonRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsonRequest"
+  responses:
+    JsonOk:
+      description: Successful JSON response using the endpoint-specific documented representation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsonResponse"
+    JsonCreated:
+      description: Resource created and returned as its documented JSON representation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsonResponse"
+    JsonAccepted:
+      description: Asynchronous work accepted with its identifier and current status.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsonResponse"
+    Error:
+      description: Standard error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    JsonRequest:
+      type: object
+      description: JSON object whose fields are documented by the consuming operation.
+      additionalProperties: true
+    JsonResponse:
+      type: object
+      description: JSON object whose fields are documented by the producing operation.
+      additionalProperties: true
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items: {}
