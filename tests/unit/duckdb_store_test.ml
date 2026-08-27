@@ -131,6 +131,24 @@ let test_bounded_parquet_benchmark_query_and_parser () =
   Sys.remove fixture_path;
   Unix.rmdir root
 
+let test_bounded_parquet_row_reader () =
+  let root = temporary_directory "fca-duckdb-rows" in
+  let fixture_path = Filename.concat root "rows.parquet" in
+  let fixture_channel = open_out_bin fixture_path in
+  close_out fixture_channel;
+  let store = create root (Filename.concat root "rows.duckdb") |> expect_created in
+  let rows =
+    match run_lwt (Duckdb_store.read_parquet_rows store ~fixture_path) with
+    | Ok rows -> rows
+    | Error error -> Alcotest.fail (Duckdb_store.error_to_string error)
+  in
+  Alcotest.(check int) "bounded row count" 1 (List.length rows);
+  Alcotest.(check string)
+    "typed row field" "tenant-fixture"
+    (Yojson.Safe.Util.(List.hd rows |> member "tenant_id" |> to_string));
+  Sys.remove fixture_path;
+  Unix.rmdir root
+
 let test_paths_reject_traversal_extension_and_symlink () =
   let root = temporary_directory "fca-duckdb-path" in
   let outside = Filename.concat (Filename.dirname root) "outside.duckdb" in
@@ -213,6 +231,8 @@ let () =
             test_typed_capability_queries;
           Alcotest.test_case "bounded Parquet benchmark" `Quick
             test_bounded_parquet_benchmark_query_and_parser;
+          Alcotest.test_case "bounded Parquet row reader" `Quick
+            test_bounded_parquet_row_reader;
         ] );
       ( "safety",
         [

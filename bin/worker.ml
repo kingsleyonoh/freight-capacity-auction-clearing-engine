@@ -127,11 +127,13 @@ let clear_job job =
                          let evidence = Capability_registry.production ~backend:"minizinc" ~version ~terminal_status:solver.terminal_status ~input_hash:solver.input_hash ~output_hash:solver.output_hash in
                          (match evidence, Clearing_service.clear model ~evidence:(Result.to_option evidence) with
                          | Ok _, Clearing_service.Feasible { awards; _ } ->
+                              Metrics.track "clearing_succeeded";
                               trace job (Printf.sprintf "clearing_feasible awards=%d" (List.length awards));
                               let* stored = Job_store.mark_succeeded job ~solver_version:version ~input_hash:solver.input_hash ~output_hash:solver.output_hash ~assignments:(List.map (fun award -> (award.Clearing_service.load_id, award.Clearing_service.bid_id)) awards) in
                               trace job (match stored with Ok () -> "stored_success" | Error error -> "store_error=" ^ error);
                               Lwt.return stored
                          | _, Clearing_service.Infeasible { reasons; relaxations; _ } ->
+                              Metrics.track "clearing_infeasible";
                               trace job "clearing_rejected";
                               let suggestions = `List (List.map (fun relaxation -> `Assoc [ ("rank", `Int relaxation.Clearing_service.rank); ("constraint_name", `String relaxation.constraint_name); ("proposal", `String relaxation.proposal); ("expected_tradeoff", `String relaxation.expected_tradeoff) ]) relaxations) in
                               let reason = match reasons with first :: _ -> first | [] -> "NO_FEASIBLE_ASSIGNMENT" in
@@ -200,10 +202,17 @@ let integration_request client (item : Maintenance.integration_outbox) =
        with
        | Error error -> Lwt.return (Error (Errors.Code.to_string (Http_client.error_code error)))
        | Ok request ->
-           Http_client.call client ~decoder:Http_client.bytes request >|= function
-           | Error error -> Error (Errors.Code.to_string (Http_client.error_code error))
-           | Ok response when Http_client.status response >= 200 && Http_client.status response < 300 -> Ok ()
-           | Ok response -> Error ("INTEGRATION_HTTP_" ^ string_of_int (Http_client.status response)))
+           if item.integration_name = "workflow_engine" then
+             Http_client.call client ~decoder:Http_client.json request >|= function
+             | Error error -> Error (Errors.Code.to_string (Http_client.error_code error))
+             | Ok response when Http_client.status response >= 200 && Http_client.status response < 300 ->
+                 Ok (string_field "execution_ref" (Http_client.body response))
+             | Ok response -> Error ("INTEGRATION_HTTP_" ^ string_of_int (Http_client.status response))
+           else
+             Http_client.call client ~decoder:Http_client.bytes request >|= function
+             | Error error -> Error (Errors.Code.to_string (Http_client.error_code error))
+             | Ok response when Http_client.status response >= 200 && Http_client.status response < 300 -> Ok None
+             | Ok response -> Error ("INTEGRATION_HTTP_" ^ string_of_int (Http_client.status response)))
 
 let process_integration () =
   match Lwt_main.run (Maintenance.claim_integration_outbox ()) with
@@ -214,12 +223,46 @@ let process_integration () =
        | Some client ->
            let result = Lwt_main.run (integration_request client item) in
            (match result with
-            | Ok () ->
+            | Ok execution_id ->
                 ignore (Lwt_main.run (Maintenance.mark_integration_succeeded ~id:item.id ~tenant_id:item.tenant_id));
+                (match execution_id, string_field "award_id" item.payload with
+                 | Some execution_id, Some award_id -> ignore (Lwt_main.run (Maintenance.record_workflow_execution ~tenant_id:item.tenant_id ~award_id ~execution_id))
+                 | _ -> ());
                 ignore (Lwt_main.run (Maintenance.update_integration_health ~tenant_id:item.tenant_id ~integration_name:item.integration_name ~status:"healthy"))
             | Error error ->
                 ignore (Lwt_main.run (Maintenance.mark_integration_retry ~id:item.id ~tenant_id:item.tenant_id ~error_code:"INTEGRATION_DELIVERY_FAILED" ~error_message:error));
                 ignore (Lwt_main.run (Maintenance.update_integration_health ~tenant_id:item.tenant_id ~integration_name:item.integration_name ~status:"degraded"))))
+
+let workflow_poll_last_run = ref 0.
+
+let process_workflow_poll () =
+  if Sys.getenv_opt "WORKFLOW_STATUS_POLLING_ENABLED" <> Some "true" then ()
+  else
+    let now = Unix.gettimeofday () in
+    if now -. !workflow_poll_last_run < 300. then ()
+    else begin
+      workflow_poll_last_run := now;
+      match Lwt_main.run (Maintenance.claim_workflow_execution ()) with
+      | Error _ | Ok None -> ()
+      | Ok (Some execution) ->
+          (match http_client (), env_url "WORKFLOW_ENGINE_URL" with
+           | Some client, Some base ->
+               let uri = append_path base ("/api/executions/" ^ Uri.pct_encode execution.execution_id) in
+               (match Http_client.request ~meth:`GET ~uri ~headers:(Option.to_list (Option.map (fun key -> ("X-API-Key", key)) (Sys.getenv_opt "WORKFLOW_ENGINE_API_KEY"))) () with
+                | Error _ -> ignore (Lwt_main.run (Maintenance.mark_workflow_failed ~tenant_id:execution.tenant_id ~approval_id:execution.approval_id))
+                | Ok request ->
+                    (match Lwt_main.run (Http_client.call client ~decoder:Http_client.json request) with
+                     | Ok response when Http_client.status response >= 200 && Http_client.status response < 300 ->
+                         let json = Http_client.body response in
+                         let status = string_field "status" json in
+                         let decision = string_field "decision" json in
+                         (match status, decision with
+                          | Some "completed", Some decision -> ignore (Lwt_main.run (Maintenance.apply_workflow_decision ~tenant_id:execution.tenant_id ~approval_id:execution.approval_id ~decision))
+                          | Some value, _ when List.mem value [ "failed"; "cancelled" ] -> ignore (Lwt_main.run (Maintenance.mark_workflow_failed ~tenant_id:execution.tenant_id ~approval_id:execution.approval_id))
+                          | _ -> ())
+                     | _ -> ignore (Lwt_main.run (Maintenance.mark_workflow_failed ~tenant_id:execution.tenant_id ~approval_id:execution.approval_id))))
+           | _ -> ())
+    end
 
 let replay_store () =
   let replay_path = Option.value ~default:"./data/replays/replay.duckdb" (Sys.getenv_opt "REPLAY_STORE_PATH") in
@@ -233,7 +276,11 @@ let replay_store () =
   in
   ensure_directory root;
   let runner = Process_runner.create ~allowed_env:[] in
-  let executable = Option.value ~default:"duckdb" (Sys.getenv_opt "FCA_DUCKDB_BINARY") in
+  let executable =
+    match Sys.getenv_opt "FCA_DUCKDB_BINARY" with
+    | Some value when value <> "" -> value
+    | _ -> if Sys.file_exists "/usr/local/bin/duckdb" then "/usr/local/bin/duckdb" else "duckdb"
+  in
   Duckdb_store.create ~runner ~executable ~replay_root:root ~database_path:replay_path
     ~timeout:60. ~output_limit:1_048_576 ~max_rows:1_000_000
 
@@ -259,6 +306,8 @@ let replay_metrics (benchmark : Duckdb_store.benchmark) baseline =
       ("assigned", `Int benchmark.baseline_eligible_count);
       ("total_cost_cents", `Int total_cost_cents);
       ("service_score_milli", `Int 0);
+      ("promotion_gate", `Bool false);
+      ("promotion_gate_reason", `String "POLICY_COMPARISON_EVIDENCE_REQUIRED");
       ("live_award_mutation", `Bool false);
       ("external_events", `Bool false) ]
 
@@ -273,10 +322,12 @@ let process_replay () =
            (match result with
             | Error error -> ignore (Lwt_main.run (Maintenance.fail_replay ~id:replay.id ~tenant_id:replay.tenant_id ~error_code:(Duckdb_store.error_code error) ~error_message:(Duckdb_store.error_to_string error)))
             | Ok benchmark ->
+                Metrics.track "replay_completed";
                 let metrics = Yojson.Safe.to_string (replay_metrics benchmark replay.baseline_strategy) in
                 ignore (Lwt_main.run (Maintenance.complete_replay ~id:replay.id ~tenant_id:replay.tenant_id ~metrics))))
 
 let maintenance_last_run = ref 0.
+let maintenance_nightly_day = ref ""
 
 let maintenance_tick () =
   let now = Unix.gettimeofday () in
@@ -286,13 +337,19 @@ let maintenance_tick () =
     let expiry = Option.value ~default:24 (Option.bind (Sys.getenv_opt "APPROVAL_EXPIRY_HOURS") int_of_string_opt) in
     ignore (Lwt_main.run (Maintenance.expire_approvals ~cutoff_hours:expiry));
     ignore (Lwt_main.run (Maintenance.deliver_notifications ()))
+  end;
+  let day = Unix.gmtime now |> fun tm -> Printf.sprintf "%04d-%03d" (tm.Unix.tm_year + 1900) tm.Unix.tm_yday in
+  if day <> !maintenance_nightly_day && Unix.gmtime now |> fun tm -> tm.Unix.tm_hour = 2 && tm.Unix.tm_min = 0 then begin
+    maintenance_nightly_day := day;
+    ignore (Lwt_main.run (Maintenance.refresh_carrier_scores ()));
+    ignore (Lwt_main.run (Maintenance.compact_report_artifacts ()))
   end
 
 let rec loop () =
   maintenance_tick ();
   match Lwt_main.run (Job_store.claim ()) with
-  | Error _ -> process_integration (); process_replay (); Unix.sleep 1; loop ()
-  | Ok None -> process_integration (); process_replay (); Unix.sleep 1; loop ()
+  | Error _ -> process_integration (); process_workflow_poll (); process_replay (); Unix.sleep 1; loop ()
+  | Ok None -> process_integration (); process_workflow_poll (); process_replay (); Unix.sleep 1; loop ()
   | Ok (Some job) -> ignore (Lwt_main.run (clear_job job)); loop ()
 
 let () =

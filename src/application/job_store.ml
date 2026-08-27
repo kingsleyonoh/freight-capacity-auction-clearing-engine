@@ -37,7 +37,12 @@ let mark_infeasible job ~reason ~relaxations =
       "INSERT INTO notifications (id, tenant_id, user_id, event_type, template_id, channel, urgency, payload_snapshot, status) SELECT gen_random_uuid(), j.tenant_id, u.id, 'clearing_infeasible', 'clearing-infeasible-v1', 'in_app', 'high', jsonb_build_object('job_id', j.id::text, 'auction_id', j.auction_id::text), 'queued' FROM clearing_jobs j JOIN users u ON u.tenant_id = j.tenant_id AND u.is_active AND u.role = 'auction_manager' WHERE j.id = ?::uuid AND j.tenant_id = ?::uuid AND j.auction_id = ?::uuid AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.tenant_id = j.tenant_id AND n.user_id = u.id AND n.event_type = 'clearing_infeasible' AND n.payload_snapshot->>'job_id' = j.id::text)"
   in
   let* result = Db_pool.with_connection (fun (module Connection : Caqti_lwt.CONNECTION) -> Connection.with_transaction (fun () -> Connection.exec mark_infeasible_request (reason, reason, reason, relaxations, job.id, job.tenant_id, job.auction_id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec infeasible_notifications (job.id, job.tenant_id, job.auction_id))) in
-  Lwt.return (match result with Ok () -> Ok () | Error _ -> Error "DATABASE_UNAVAILABLE")
+  match result with
+  | Error _ -> Lwt.return (Error "DATABASE_UNAVAILABLE")
+  | Ok () ->
+      let payload = Yojson.Safe.to_string (`Assoc [ ("job_id", `String job.id); ("auction_id", `String job.auction_id); ("reason", `String reason); ("relaxations", (try Yojson.Safe.from_string relaxations with Yojson.Json_error _ -> `List [])) ]) in
+      let* _ = Store.enqueue_notification_event ~tenant_id:job.tenant_id ~event_type:"freight_auction.clearing.infeasible" ~payload ~idempotency_key:("clearing-infeasible:" ^ job.id) in
+      Lwt.return (Ok ())
 
 let mark_failed_request =
   let open Caqti_request.Infix in
@@ -88,5 +93,16 @@ let mark_succeeded job ~solver_version ~input_hash ~output_hash ~assignments =
     (Caqti_type.(t2 string string) ->. Caqti_type.unit)
       "INSERT INTO notifications (id, tenant_id, user_id, event_type, template_id, channel, urgency, payload_snapshot, status) SELECT gen_random_uuid(), d.tenant_id, u.id, 'carrier_bid_rejected', 'carrier-bid-rejected-v1', 'in_app', 'low', jsonb_build_object('bid_id', d.bid_id::text, 'auction_id', d.auction_id::text, 'reason', COALESCE(d.rejected_reason, 'NOT_SELECTED')), 'queued' FROM clearing_decisions d JOIN bids b ON b.id = d.bid_id AND b.tenant_id = d.tenant_id JOIN users u ON u.tenant_id = b.tenant_id AND u.carrier_id = b.carrier_id AND u.is_active AND u.role = 'carrier_viewer' WHERE d.tenant_id = ?::uuid AND d.clearing_job_id = ?::uuid AND d.decision_type = 'rejected_policy' AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.tenant_id = d.tenant_id AND n.user_id = u.id AND n.event_type = 'carrier_bid_rejected' AND n.payload_snapshot->>'bid_id' = d.bid_id::text)"
   in
-  let* result = Db_pool.with_connection (fun (module Connection : Caqti_lwt.CONNECTION) -> Connection.with_transaction (fun () -> Connection.exec complete_request parameters >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec ensure_approval_request (input_hash, output_hash, job.tenant_id, job.id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec queue_approval_notifications (job.tenant_id, job.id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec queue_bid_notifications (job.tenant_id, job.id))) in
-  Lwt.return (match result with Ok () -> Ok () | Error _ -> Error "DATABASE_UNAVAILABLE")
+  let queue_workflow_outbox =
+    let open Caqti_request.Infix in
+    (Caqti_type.(t2 string string) ->. Caqti_type.unit)
+      "INSERT INTO integration_outbox (id, tenant_id, integration_name, event_type, target_url_env_var, payload, idempotency_key, status) SELECT gen_random_uuid(), ar.tenant_id, 'workflow_engine', 'freight_auction.approval.required', 'WORKFLOW_ENGINE_URL', jsonb_build_object('workflow_id', COALESCE(s.config->>'workflow_id', s.config->'workflow_ids'->>'high_value_approval'), 'award_id', ar.award_id::text, 'auction_id', ar.auction_id::text, 'approval_id', ar.id::text), 'approval:' || ar.award_id::text, 'queued' FROM approval_requests ar JOIN integration_settings s ON s.tenant_id = ar.tenant_id AND s.integration_name = 'workflow_engine' AND s.enabled WHERE ar.tenant_id = ?::uuid AND ar.award_id IN (SELECT id FROM awards WHERE tenant_id = ar.tenant_id AND clearing_job_id = ?::uuid) AND ar.status = 'pending' AND COALESCE(s.config->>'workflow_id', s.config->'workflow_ids'->>'high_value_approval', '') <> '' ON CONFLICT (tenant_id, integration_name, idempotency_key) DO NOTHING"
+  in
+  let* result = Db_pool.with_connection (fun (module Connection : Caqti_lwt.CONNECTION) -> Connection.with_transaction (fun () -> Connection.exec complete_request parameters >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec ensure_approval_request (input_hash, output_hash, job.tenant_id, job.id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec queue_approval_notifications (job.tenant_id, job.id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec queue_workflow_outbox (job.tenant_id, job.id) >>= function Error error -> Lwt.return (Error error) | Ok () -> Connection.exec queue_bid_notifications (job.tenant_id, job.id))) in
+  match result with
+  | Error _ -> Lwt.return (Error "DATABASE_UNAVAILABLE")
+  | Ok () ->
+      let payload = Yojson.Safe.to_string (`Assoc [ ("job_id", `String job.id); ("auction_id", `String job.auction_id); ("solver_version", `String solver_version); ("solver_input_hash", `String input_hash); ("solver_output_hash", `String output_hash); ("award_count", `Int (List.length assignments)) ]) in
+      let* _ = Store.enqueue_notification_event ~tenant_id:job.tenant_id ~event_type:"freight_auction.clearing.succeeded" ~payload ~idempotency_key:("clearing-succeeded:" ^ job.id) in
+      let* _ = if assignments = [] then Lwt.return (Ok ()) else Store.enqueue_notification_event ~tenant_id:job.tenant_id ~event_type:"freight_auction.approval.required" ~payload ~idempotency_key:("approval-required:" ^ job.id) in
+      Lwt.return (Ok ())

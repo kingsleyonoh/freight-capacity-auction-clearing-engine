@@ -1,4 +1,5 @@
 (library
  (name fca_imports)
  (wrapped false)
- (modules validator))
+ (modules validator import_validation)
+ (libraries yojson))

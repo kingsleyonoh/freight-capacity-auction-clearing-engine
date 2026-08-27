@@ -20,7 +20,8 @@ RUN opam exec -- dune build --profile=release \
       bin/server.exe \
       bin/worker.exe \
       bin/migrate.exe \
-      bin/setup.exe
+      bin/setup.exe \
+      bin/freight_auction.exe
 
 FROM debian:12-slim AS runtime
 
@@ -55,7 +56,9 @@ COPY --from=build --chown=freight:freight /home/opam/app/_build/default/bin/serv
 COPY --from=build --chown=freight:freight /home/opam/app/_build/default/bin/worker.exe /app/bin/worker.exe
 COPY --from=build --chown=freight:freight /home/opam/app/_build/default/bin/migrate.exe /app/bin/migrate.exe
 COPY --from=build --chown=freight:freight /home/opam/app/_build/default/bin/setup.exe /app/bin/setup.exe
+COPY --from=build --chown=freight:freight /home/opam/app/_build/default/bin/freight_auction.exe /app/bin/freight-auction
 COPY --from=build --chown=freight:freight /home/opam/app/src/solver/models /app/models
+COPY --from=build --chown=freight:freight /home/opam/app/src/ui/static/app.js /app/assets/app.js
 
 ENV APP_ENV=production \
     APP_PORT=8080 \

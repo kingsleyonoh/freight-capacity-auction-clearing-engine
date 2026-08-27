@@ -229,3 +229,13 @@
  (name domain_product_test)
  (modules domain_product_test)
  (libraries alcotest fca_auth fca_imports fca_clearing fca_approvals fca_reports fca_replays fca_notifications fca_integrations yojson))
+
+(test
+ (name import_validation_test)
+ (modules import_validation_test)
+ (libraries alcotest fca_imports yojson))
+
+(test
+ (name metrics_test)
+ (modules metrics_test)
+ (libraries alcotest fca_shared))

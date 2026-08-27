@@ -1,6 +1,7 @@
 open Lwt.Infix
 
 let actor_field = Dream.new_field ~name:"fca_actor" ()
+let request_id_field = Dream.new_field ~name:"fca_request_id" ()
 let rate_state : (string, int * int) Hashtbl.t = Hashtbl.create 256
 
 let error_json ?(status = `Bad_Request) code message =
@@ -15,7 +16,13 @@ let request_id request =
   | _ -> Printf.sprintf "fca-%Ld" (Int64.of_float (Unix.gettimeofday () *. 1_000_000.))
 
 let request_id_middleware next request =
-  next request >|= fun response -> Dream.set_header response "X-Request-ID" (request_id request); response
+  let id = request_id request in
+  Dream.set_field request request_id_field id;
+  next request >|= fun response ->
+  Dream.set_header response "X-Request-ID" id;
+  Dream.set_header response "X-Trace-ID" id;
+  if String.starts_with ~prefix:"/api/" (Dream.target request) then Dream.set_header response "Cache-Control" "no-store";
+  response
 
 let route_rate_limit target method_ =
   if target = "/api/tenants/register" then 5
@@ -106,6 +113,16 @@ let json_list_member name = function
   | `Assoc fields -> (match List.assoc_opt name fields with Some (`List values) -> values | _ -> [])
   | _ -> []
 
+let string_list_member name json =
+  json_list_member name json
+  |> List.filter_map (function `String value -> Some value | _ -> None)
+
+let import_validation_context json : Import_validation.context =
+  { carrier_ids = string_list_member "carrier_ids" json;
+    suspended_carrier_ids = string_list_member "suspended_carrier_ids" json;
+    lane_ids = string_list_member "lane_ids" json;
+    load_ids = string_list_member "load_ids" json }
+
 let required_string name json = match string_member name json with Some value when value <> "" -> Ok value | _ -> Error (error_json "REQUEST_INVALID" ("Field " ^ name ^ " is required."))
 
 let store_error = function
@@ -138,11 +155,11 @@ let render_report ~format ~report_id snapshot =
        | "csv" ->
            (match Report_renderer.render_csv ~viewer:Report_renderer.Operator report with
             | Error _ -> error_json ~status:`Internal_Server_Error "REPORT_RENDER_FAILED" "The report could not be rendered."
-            | Ok body -> Dream.respond ~headers:[ ("Content-Type", "text/csv; charset=utf-8"); ("Content-Disposition", "attachment; filename=\"report-" ^ report_id ^ ".csv\"") ] body)
+            | Ok body -> Dream.respond ~headers:[ ("Content-Type", "text/csv; charset=utf-8"); ("Content-Disposition", "attachment; filename=\"report-" ^ report_id ^ ".csv\""); ("Cache-Control", "private, max-age=31536000, immutable") ] body)
        | "html" ->
            (match Report_renderer.render_html ~viewer:Report_renderer.Operator report with
             | Error _ -> error_json ~status:`Internal_Server_Error "REPORT_RENDER_FAILED" "The report could not be rendered."
-            | Ok body -> Dream.respond ~headers:[ ("Content-Type", "text/html; charset=utf-8"); ("Content-Disposition", "attachment; filename=\"report-" ^ report_id ^ ".html\"") ] body)
+            | Ok body -> Dream.respond ~headers:[ ("Content-Type", "text/html; charset=utf-8"); ("Content-Disposition", "attachment; filename=\"report-" ^ report_id ^ ".html\""); ("Cache-Control", "private, max-age=31536000, immutable") ] body)
        | "pdf" -> error_json ~status:`Not_Implemented "REPORT_FORMAT_UNAVAILABLE" "PDF export is declared but no PDF renderer is installed."
        | _ -> error_json "REPORT_FORMAT_INVALID" "format must be csv, json, html, or pdf.")
 
@@ -168,6 +185,7 @@ let register request =
          Store.register ~tenant_name ~email ~name >>= (function
            | Error error -> store_error error
            | Ok (actor, api_key) ->
+               Metrics.track "tenant_registered";
                let token = match Sys.getenv_opt "SECRET_KEY_BASE" with Some secret -> `String (Jwt_session.issue ~secret ~tenant_id:actor.tenant_id ~user_id:actor.user_id ~role:actor.role ~ttl_seconds:3_600) | None -> `Null in
                Dream.json (Yojson.Safe.to_string (`Assoc [ ("api_key", `String api_key); ("access_token", token); ("tenant_id", `String actor.tenant_id); ("user_id", `String actor.user_id) ])))
      | Error response, _, _ | _, Error response, _ | _, _, Error response -> response)
@@ -220,11 +238,17 @@ let create_import request =
       let valid_format = List.mem source_format [ "csv"; "parquet"; "json_api" ] in
       if not valid_resource || not valid_format then error_json "IMPORT_INPUT_INVALID" "resource_type or source_format is not supported."
       else
-        let row_count = if rows <> [] then List.length rows else if csv = "" then 0 else max 0 (List.length (String.split_on_char '\n' csv) - 1) in
-        let valid_count, invalid_count = if rows <> [] then row_count, 0 else if csv = "" then 0, 0 else row_count, 0 in
-        Store.create_import ~tenant_id:value.tenant_id ~user_id:value.user_id ~resource_type ~source_filename ~source_format ~auction_id ~mapping ~staging_rows:(Yojson.Safe.to_string (`List rows)) ~row_count ~valid_row_count:valid_count ~invalid_row_count:invalid_count >>= function
-        | Ok import_id -> Store.get_import ~tenant_id:value.tenant_id ~import_id >>= (function Ok json -> Dream.json (Yojson.Safe.to_string json) | Error error -> store_error error)
-        | Error error -> store_error error
+      Store.import_context ~tenant_id:value.tenant_id >>= function
+      | Error error -> store_error error
+      | Ok context_json ->
+          let context = import_validation_context context_json in
+          let validated = if rows <> [] then Import_validation.validate_json_rows ~resource_type ~context rows else if source_format = "csv" && csv <> "" then Import_validation.validate_csv ~resource_type ~context csv else Import_validation.validate_json_rows ~resource_type ~context [] in
+          let summary = Yojson.Safe.to_string (`Assoc [ ("status", `String validated.status); ("row_count", `Int validated.row_count); ("valid_row_count", `Int validated.valid_row_count); ("invalid_row_count", `Int validated.invalid_row_count); ("error_count", `Int (List.length validated.errors)); ("source_format", `String source_format) ]) in
+          Store.create_import ~tenant_id:value.tenant_id ~user_id:value.user_id ~resource_type ~source_filename ~source_format ~auction_id ~mapping ~staging_rows:(Yojson.Safe.to_string (`List validated.rows)) ~validation_summary:summary ~row_errors:(Yojson.Safe.to_string (`List validated.errors)) ~row_count:validated.row_count ~valid_row_count:validated.valid_row_count ~invalid_row_count:validated.invalid_row_count >>= function
+          | Ok import_id ->
+              Metrics.track "import_completed";
+              Store.get_import ~tenant_id:value.tenant_id ~import_id >>= (function Ok json -> Dream.json (Yojson.Safe.to_string json) | Error error -> store_error error)
+          | Error error -> store_error error
 
 let get_import request =
   match permission request Permission_matrix.Read_tenant Permission_matrix.Tenant with
@@ -394,7 +418,9 @@ let create_policy request =
 let activate_policy request =
   match permission request Permission_matrix.Manage_policy Permission_matrix.Tenant with
   | Error response -> response
-  | Ok value -> Store.activate_policy ~tenant_id:value.tenant_id ~policy_id:(Dream.param request "id") >>= function Ok json -> Dream.json (Yojson.Safe.to_string json) | Error error -> store_error error
+  | Ok value -> Store.activate_policy ~tenant_id:value.tenant_id ~policy_id:(Dream.param request "id") >>= function
+    | Ok json -> Metrics.track "policy_activated"; Dream.json (Yojson.Safe.to_string json)
+    | Error error -> store_error error
 
 let list_clearing_jobs request =
   match permission request Permission_matrix.Read_tenant Permission_matrix.Tenant with
@@ -460,6 +486,14 @@ let get_replay request =
   match permission request Permission_matrix.Read_replay Permission_matrix.Tenant with
   | Error response -> response
   | Ok value -> Store.get_replay ~tenant_id:value.tenant_id ~replay_id:(Dream.param request "id") >>= function Ok json -> Dream.json (Yojson.Safe.to_string json) | Error error -> store_error error
+
+let cancel_replay request =
+  match permission request Permission_matrix.Read_replay Permission_matrix.Tenant with
+  | Error response -> response
+  | Ok value ->
+      Store.cancel_replay ~tenant_id:value.tenant_id ~replay_id:(Dream.param request "id") >>= function
+      | Ok () -> Dream.json "{\"status\":\"cancelled\"}"
+      | Error error -> store_error error
 
 let create_replay request =
   match permission request Permission_matrix.Read_replay Permission_matrix.Tenant with
@@ -558,7 +592,23 @@ let webhook_bid_update request =
       else
         (try
            let json = Yojson.Safe.from_string body in
-           Dream.json (Yojson.Safe.to_string (`Assoc [ ("received", `Bool true); ("event_type", Option.value ~default:"unknown" (string_member "event_type" json) |> fun value -> `String value) ]))
+           let event_type = Option.value ~default:"unknown" (string_member "event_type" json) in
+           let audit_entity_id = Option.value ~default:"00000000-0000-4000-8000-000000000000" (string_member "event_id" json) in
+           let acknowledge () =
+             let audit_payload = Yojson.Safe.to_string (`Assoc [ ("event_type", `String event_type); ("body_sha256", `String (Digestif.SHA256.digest_string body |> Digestif.SHA256.to_hex)) ]) in
+             Store.record_system_audit ~tenant_id:(Option.value ~default:"00000000-0000-4000-8000-000000000000" (string_member "tenant_id" json)) ~entity_id:audit_entity_id ~event_type:(if event_type = "unknown" then "webhook_unknown_event" else "webhook_acknowledged") ~payload:audit_payload >>= fun _ ->
+             Dream.json (Yojson.Safe.to_string (`Assoc [ ("status", `String "acknowledged"); ("event_type", `String event_type) ]))
+           in
+           if event_type <> "bid_updated" then acknowledge ()
+           else
+             (match (string_member "tenant_id" json, string_member "auction_id" json, string_member "load_id" json, string_member "carrier_id" json, string_member "idempotency_key" json, int_member "bid_amount_cents" json, int_member "service_score_milli" json, string_member "submitted_at" json) with
+              | Some tenant_id, Some auction_id, Some load_id, Some carrier_id, Some idempotency_key, Some amount, Some score, Some submitted_at ->
+                  (Store.submit_webhook_bid ~tenant_id ~auction_id ~load_id ~carrier_id ~idempotency_key ~bid_amount_cents:amount ~service_score_milli:score ~submitted_at >>= function
+                   | Ok bid_id ->
+                       Store.record_system_audit ~tenant_id ~entity_id:bid_id ~event_type:"webhook_bid_accepted" ~payload:(Yojson.Safe.to_string (`Assoc [ ("event_type", `String event_type); ("idempotency_key", `String idempotency_key) ])) >>= fun _ ->
+                       Dream.respond ~status:`Accepted (Yojson.Safe.to_string (`Assoc [ ("status", `String "accepted"); ("bid_id", `String bid_id) ]))
+                   | Error error -> store_error error)
+              | _ -> error_json "WEBHOOK_PAYLOAD_INVALID" "bid_updated requires tenant, auction, load, carrier, idempotency, amount, score, and submitted_at fields.")
          with Yojson.Json_error _ -> error_json "WEBHOOK_PAYLOAD_INVALID" "The webhook payload is invalid.")
   | _ -> error_json ~status:`Unauthorized "WEBHOOK_AUTH_REQUIRED" "A webhook signature is required."
 
@@ -569,7 +619,9 @@ let approve_award request =
       json_body request >>= fun json ->
       let note = Option.value ~default:"Approved by operator" (string_member "note" json) in
       Store.approve_award ~tenant_id:value.tenant_id ~user_id:value.user_id ~award_id:(Dream.param request "id") ~note >>= function
-      | Ok approval_id -> Dream.json (Yojson.Safe.to_string (`Assoc [ ("award_id", `String (Dream.param request "id")); ("approval_id", `String approval_id); ("status", `String "approved") ]))
+      | Ok approval_id ->
+          Metrics.track "award_approved";
+          Dream.json (Yojson.Safe.to_string (`Assoc [ ("award_id", `String (Dream.param request "id")); ("approval_id", `String approval_id); ("status", `String "approved") ]))
       | Error error -> store_error error
 
 let reject_award request =
@@ -611,7 +663,9 @@ let export_auction request =
       let format = Option.value ~default:"json" (string_member "format" json) in
       Store.export_snapshot ~tenant_id:value.tenant_id ~user_id:value.user_id ~auction_id:(Dream.param request "id") ~format >>= function
       | Error error -> store_error error
-      | Ok (report_id, snapshot) -> render_report ~format ~report_id snapshot
+      | Ok (report_id, snapshot) ->
+          Metrics.track "export_downloaded";
+          render_report ~format ~report_id snapshot
 
 let get_report request =
   match permission request Permission_matrix.Export_report Permission_matrix.Tenant with
@@ -653,7 +707,7 @@ let create_auction request =
             error_json ~status:`Not_Implemented "AUCTION_MODE_UNSUPPORTED" "Only single_round_spot is enabled for production clearing."
           else
             let auto_clear_on_close = Option.value ~default:false (bool_member "auto_clear_on_close" json) in
-            Store.create_auction ~auto_clear_on_close ~tenant_id:value.tenant_id ~user_id:value.user_id ~name ~mode ~bid_open_at:open_at ~bid_close_at:close_at >>= (function Ok id -> Dream.json (Yojson.Safe.to_string (`Assoc [ ("id", `String id); ("status", `String "open"); ("auto_clear_on_close", `Bool auto_clear_on_close) ])) | Error error -> store_error error)
+            Store.create_auction ~auto_clear_on_close ~tenant_id:value.tenant_id ~user_id:value.user_id ~name ~mode ~bid_open_at:open_at ~bid_close_at:close_at >>= (function Ok id -> Metrics.track "auction_created"; Dream.json (Yojson.Safe.to_string (`Assoc [ ("id", `String id); ("status", `String "open"); ("auto_clear_on_close", `Bool auto_clear_on_close) ])) | Error error -> store_error error)
       | Error response, _, _, _ | _, Error response, _, _ | _, _, Error response, _ | _, _, _, Error response -> response
 
 let update_auction request =
@@ -678,7 +732,7 @@ let close_auction request =
       | Error error -> store_error error
       | Ok () when auto_queue ->
           Store.enqueue_clear ~tenant_id:value.tenant_id ~auction_id:(Dream.param request "id") ~user_id:value.user_id >>= (function
-            | Ok job_id -> Dream.json (Yojson.Safe.to_string (`Assoc [ ("status", `String "clearing_queued"); ("job_id", `String job_id) ]))
+            | Ok job_id -> Metrics.track "clearing_started"; Dream.json (Yojson.Safe.to_string (`Assoc [ ("status", `String "clearing_queued"); ("job_id", `String job_id) ]))
             | Error error -> store_error error)
       | Ok () -> Dream.json "{\"status\":\"closed\"}"
 
@@ -692,7 +746,7 @@ let clear_auction request =
           (match string_member "mode" auction with
            | Some mode when Result.is_ok (Capability_registry.production_mode mode) ->
                Store.enqueue_clear ~tenant_id:value.tenant_id ~auction_id:(Dream.param request "id") ~user_id:value.user_id >>= (function
-                 | Ok job_id -> Dream.json (Yojson.Safe.to_string (`Assoc [ ("job_id", `String job_id); ("status", `String "queued") ]))
+                 | Ok job_id -> Metrics.track "clearing_started"; Dream.json (Yojson.Safe.to_string (`Assoc [ ("job_id", `String job_id); ("status", `String "queued") ]))
                  | Error error -> store_error error)
            | _ -> error_json ~status:`Not_Implemented "AUCTION_MODE_UNSUPPORTED" "Only single_round_spot is enabled for production clearing.")
 
@@ -741,16 +795,34 @@ let _legacy_page _request = Dream.html "<!doctype html><html lang=\"en\"><body>l
 
 let _legacy_assets _request = Dream.respond ~status:`OK ~headers:[ ("Content-Type", "text/css; charset=utf-8") ] "body{}"
 
-let assets _request = Dream.respond ~status:`OK ~headers:[ ("Content-Type", "text/css; charset=utf-8") ] "body{margin:0;background:#f5f7f9;color:#16212b;font:16px system-ui,sans-serif}header{display:flex;justify-content:space-between;align-items:center;padding:20px 6vw;background:#102a43;color:#fff}header a{color:inherit;text-decoration:none;margin-right:20px}.hero{max-width:760px;padding:12vh 6vw}.eyebrow{letter-spacing:.12em;color:#127c8a;font-size:.75rem;font-weight:700}.hero h1{font-size:clamp(2.3rem,6vw,5rem);line-height:1.02;margin:.4em 0}.large-copy{font-size:1.25rem}.button{display:inline-block;background:#8f3018;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:700}.desk{margin:0 6vw 48px;padding:28px;background:#fff;border:1px solid #b8c6d1;border-radius:12px}.section-heading{display:flex;justify-content:space-between}.risk-status{font-weight:700;color:#7b2616}.status-icon{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#7b2616;color:#fff}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:560px}th,td{text-align:left;border-bottom:1px solid #b8c6d1;padding:12px}button,input{font:inherit;min-height:44px}.row-action{border:2px solid #102a43;background:#fff;color:#102a43;border-radius:7px;padding:8px 12px}.detail-panel,.import-ledger,.frontier{margin-top:24px;padding:20px;border:1px solid #b8c6d1;border-radius:8px}.detail-panel{background:#edf7f6}.import-ledger{background:#fffaf0}.import-ledger input{display:block;margin:8px 0;border:2px solid #102a43;padding:8px}.import-ledger p[role=alert]{color:#7b2616;font-weight:600}.frontier{background:#f1f5fb}.essential-graphic{padding:18px;background:#102a43;color:#fff;border-radius:8px;margin-bottom:12px}.dialog{position:fixed;inset:20% 10%;z-index:2;background:#fff;border:3px solid #102a43;padding:28px;box-shadow:0 12px 40px #16212b55}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0 6vw 8vh}.cards article{background:#fff;padding:24px;border:1px solid #b8c6d1;border-radius:12px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}:focus-visible{outline:3px solid #c2410c;outline-offset:3px}@media(max-width:700px){header{display:block}.section-heading{display:block}.cards{grid-template-columns:1fr}.hero{padding-top:8vh}.desk{margin-inline:3vw;padding:18px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}"
+let assets _request = Dream.respond ~status:`OK ~headers:[ ("Content-Type", "text/css; charset=utf-8"); ("Cache-Control", "public, max-age=31536000, immutable") ] "body{margin:0;background:#f5f7f9;color:#16212b;font:16px system-ui,sans-serif}header{display:flex;justify-content:space-between;align-items:center;padding:20px 6vw;background:#102a43;color:#fff}header a{color:inherit;text-decoration:none;margin-right:20px}.hero{max-width:760px;padding:12vh 6vw}.eyebrow{letter-spacing:.12em;color:#127c8a;font-size:.75rem;font-weight:700}.hero h1{font-size:clamp(2.3rem,6vw,5rem);line-height:1.02;margin:.4em 0}.large-copy{font-size:1.25rem}.button{display:inline-block;background:#8f3018;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:700}.desk{margin:0 6vw 48px;padding:28px;background:#fff;border:1px solid #b8c6d1;border-radius:12px}.section-heading{display:flex;justify-content:space-between}.risk-status{font-weight:700;color:#7b2616}.status-icon{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#7b2616;color:#fff}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:560px}th,td{text-align:left;border-bottom:1px solid #b8c6d1;padding:12px}button,input{font:inherit;min-height:44px}.row-action{border:2px solid #102a43;background:#fff;color:#102a43;border-radius:7px;padding:8px 12px}.detail-panel,.import-ledger,.frontier{margin-top:24px;padding:20px;border:1px solid #b8c6d1;border-radius:8px}.detail-panel{background:#edf7f6}.import-ledger{background:#fffaf0}.import-ledger input{display:block;margin:8px 0;border:2px solid #102a43;padding:8px}.import-ledger p[role=alert]{color:#7b2616;font-weight:600}.frontier{background:#f1f5fb}.essential-graphic{padding:18px;background:#102a43;color:#fff;border-radius:8px;margin-bottom:12px}.dialog{position:fixed;inset:20% 10%;z-index:2;background:#fff;border:3px solid #102a43;padding:28px;box-shadow:0 12px 40px #16212b55}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0 6vw 8vh}.cards article{background:#fff;padding:24px;border:1px solid #b8c6d1;border-radius:12px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}:focus-visible{outline:3px solid #c2410c;outline-offset:3px}@media(max-width:700px){header{display:block}.section-heading{display:block}.cards{grid-template-columns:1fr}.hero{padding-top:8vh}.desk{margin-inline:3vw;padding:18px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}"
+
+let static_asset path content_type cache_control =
+  let candidates = [ Filename.concat (Sys.getcwd ()) ("src/ui/static/" ^ path); Filename.concat "/app/assets" path ] in
+  let rec read = function
+    | [] -> None
+    | candidate :: rest ->
+        if Sys.file_exists candidate then
+          (try
+             let channel = open_in_bin candidate in
+             Some (Fun.protect ~finally:(fun () -> close_in_noerr channel) (fun () -> really_input_string channel (in_channel_length channel)))
+           with _ -> read rest)
+        else read rest
+  in
+  match read candidates with
+  | Some value -> Dream.respond ~status:`OK ~headers:[ ("Content-Type", content_type); ("Cache-Control", cache_control) ] value
+  | None -> Dream.respond ~status:`Not_Found "asset not found"
+
+let app_js _request = static_asset "app.js" "text/javascript; charset=utf-8" "public, max-age=31536000, immutable"
 let page request = Dream.html (Console_page.html_for_path (Dream.target request))
 
 let app () =
   Dream.pipeline [ request_id_middleware; rate_limit_middleware; authenticate ]
     (Dream.router
-       [ Dream.get "/" page; Dream.get "/login" page; Dream.get "/dashboard" page; Dream.get "/auctions" page; Dream.get "/auctions/:id" page; Dream.get "/auctions/:id/import" page; Dream.get "/auctions/:id/clearing" page; Dream.get "/auctions/:id/infeasible" page; Dream.get "/approvals" page; Dream.get "/replays" page; Dream.get "/reports" page; Dream.get "/policies" page; Dream.get "/policies/:id" page; Dream.get "/carrier/bids" page; Dream.get "/carriers/:id" page; Dream.get "/settings/integrations" page; Dream.get "/settings/notifications" page; Dream.get "/settings/tenant" page; Dream.get "/settings/users" page; Dream.get "/operator/jobs" page; Dream.get "/assets/style.css" assets;
+       [ Dream.get "/" page; Dream.get "/login" page; Dream.get "/dashboard" page; Dream.get "/auctions" page; Dream.get "/auctions/:id" page; Dream.get "/auctions/:id/import" page; Dream.get "/auctions/:id/clearing" page; Dream.get "/auctions/:id/infeasible" page; Dream.get "/approvals" page; Dream.get "/replays" page; Dream.get "/reports" page; Dream.get "/policies" page; Dream.get "/policies/:id" page; Dream.get "/carrier/bids" page; Dream.get "/carriers/:id" page; Dream.get "/settings/integrations" page; Dream.get "/settings/notifications" page; Dream.get "/settings/tenant" page; Dream.get "/settings/users" page; Dream.get "/operator/jobs" page; Dream.get "/assets/style.css" assets; Dream.get "/assets/app.js" app_js;
          Dream.get "/health" health; Dream.get "/health/db" health_db; Dream.get "/health/ready" ready;
          Dream.post "/api/auth/register" register; Dream.post "/api/tenants/register" register; Dream.post "/api/auth/refresh" refresh; Dream.get "/api/me" me; Dream.get "/tenants/me" tenant_me; Dream.get "/api/auctions" list_auctions; Dream.post "/api/auctions" create_auction; Dream.get "/api/auctions/:id" get_auction; Dream.patch "/api/auctions/:id" update_auction; Dream.get "/api/auctions/:id/bids" list_bids; Dream.get "/api/carrier/bids" list_carrier_bids; Dream.post "/api/auctions/:id/close" close_auction; Dream.post "/api/auctions/:id/close-bidding" close_auction; Dream.post "/api/auctions/:id/clear" clear_auction; Dream.post "/api/auctions/:id/loads" add_load; Dream.post "/api/auctions/:id/bids" submit_bid;
-         Dream.get "/api/policies" list_policies; Dream.post "/api/policies" create_policy; Dream.post "/api/policies/:id/activate" activate_policy; Dream.get "/api/carriers" list_carriers; Dream.post "/api/carriers" create_carrier; Dream.get "/api/carriers/:id" get_carrier; Dream.patch "/api/carriers/:id" patch_carrier; Dream.get "/api/replays" list_replays; Dream.post "/api/replays" create_replay; Dream.get "/api/replays/:id" get_replay; Dream.get "/api/approvals" list_approvals; Dream.get "/api/notifications" list_notifications; Dream.post "/api/notifications/:id/read" mark_notification_read; Dream.get "/api/reports" list_reports; Dream.get "/api/reports/:id" get_report; Dream.get "/api/audit-events" list_audit_events; Dream.get "/api/settings/integrations" list_integrations; Dream.get "/api/integration-settings" list_integrations; Dream.patch "/api/integration-settings" patch_integration; Dream.get "/api/integrations/health" integration_health; Dream.post "/api/integrations/notification-hub/test" test_notification_hub; Dream.post "/api/integrations/workflow-engine/test" test_workflow_engine; Dream.post "/api/integrations/webhook-engine/bid-updates" webhook_bid_update; Dream.get "/api/settings/notifications" notification_preferences; Dream.patch "/api/settings/notifications" patch_notification_preference; Dream.get "/api/settings/tenant" tenant_settings; Dream.patch "/api/settings/tenant" patch_tenant_settings; Dream.get "/api/settings/users" list_users; Dream.post "/api/settings/users" create_user; Dream.get "/api/settings/users/:id" get_user; Dream.patch "/api/settings/users/:id" patch_user; Dream.post "/api/imports" create_import; Dream.get "/api/imports/:id" get_import; Dream.post "/api/imports/:id/commit" commit_import;
+         Dream.get "/api/policies" list_policies; Dream.post "/api/policies" create_policy; Dream.post "/api/policies/:id/activate" activate_policy; Dream.get "/api/carriers" list_carriers; Dream.post "/api/carriers" create_carrier; Dream.get "/api/carriers/:id" get_carrier; Dream.patch "/api/carriers/:id" patch_carrier; Dream.get "/api/replays" list_replays; Dream.post "/api/replays" create_replay; Dream.get "/api/replays/:id" get_replay; Dream.post "/api/replays/:id/cancel" cancel_replay; Dream.get "/api/approvals" list_approvals; Dream.get "/api/notifications" list_notifications; Dream.post "/api/notifications/:id/read" mark_notification_read; Dream.get "/api/reports" list_reports; Dream.get "/api/reports/:id" get_report; Dream.get "/api/audit-events" list_audit_events; Dream.get "/api/settings/integrations" list_integrations; Dream.get "/api/integration-settings" list_integrations; Dream.patch "/api/integration-settings" patch_integration; Dream.get "/api/integrations/health" integration_health; Dream.post "/api/integrations/notification-hub/test" test_notification_hub; Dream.post "/api/integrations/workflow-engine/test" test_workflow_engine; Dream.post "/api/integrations/webhook-engine/bid-updates" webhook_bid_update; Dream.get "/api/settings/notifications" notification_preferences; Dream.patch "/api/settings/notifications" patch_notification_preference; Dream.get "/api/settings/tenant" tenant_settings; Dream.patch "/api/settings/tenant" patch_tenant_settings; Dream.get "/api/settings/users" list_users; Dream.post "/api/settings/users" create_user; Dream.get "/api/settings/users/:id" get_user; Dream.patch "/api/settings/users/:id" patch_user; Dream.post "/api/imports" create_import; Dream.get "/api/imports/:id" get_import; Dream.post "/api/imports/:id/commit" commit_import;
          Dream.get "/api/clearing-jobs" list_clearing_jobs; Dream.get "/api/clearing-jobs/:id" get_clearing_job; Dream.post "/api/clearing-jobs/:id/cancel" cancel_job; Dream.post "/api/clearing-jobs/:id/retry" retry_job; Dream.get "/api/auctions/:id/awards" list_awards; Dream.get "/api/auctions/:id/explanations" list_explanations; Dream.post "/api/auctions/:id/export" export_auction; Dream.post "/api/awards/:id/approve" approve_award; Dream.post "/api/awards/:id/reject" reject_award; Dream.post "/api/awards/:id/withdraw" withdraw_award; Dream.get "/metrics" (fun _ -> Dream.respond (Metrics.prometheus ())) ])
 
 let () =

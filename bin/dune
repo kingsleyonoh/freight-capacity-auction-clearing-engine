@@ -4,6 +4,12 @@
  (libraries fca_config fca_shared lwt.unix uri))
 
 (executable
+ (name freight_auction)
+ (public_name freight-auction)
+ (modules freight_auction)
+ (libraries fca_config fca_shared fca_application fca_imports fca_replays fca_process_runner lwt.unix yojson uri unix))
+
+(executable
  (name solver_smoke)
  (modules solver_smoke)
  (libraries fca_process_runner fca_solver lwt.unix yojson))

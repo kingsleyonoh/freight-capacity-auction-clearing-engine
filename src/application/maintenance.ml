@@ -19,6 +19,13 @@ type replay_job = {
   created_by_user_id : string;
 }
 
+type workflow_execution = {
+  approval_id : string;
+  award_id : string;
+  tenant_id : string;
+  execution_id : string;
+}
+
 let find request parameters =
   Db_pool.with_connection (fun (module Connection : Caqti_lwt.CONNECTION) ->
       Connection.find request parameters)
@@ -121,6 +128,48 @@ let update_integration_health ~tenant_id ~integration_name ~status =
     Lwt.return (Error "INTEGRATION_HEALTH_INVALID")
   else exec health_request (status, tenant_id, integration_name)
 
+let record_workflow_execution_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t3 string string string) ->. Caqti_type.unit)
+    "UPDATE approval_requests SET workflow_execution_id = ?, updated_at = now() WHERE tenant_id = ?::uuid AND award_id = ?::uuid AND status = 'pending' AND workflow_execution_id IS NULL"
+
+let record_workflow_execution ~tenant_id ~award_id ~execution_id =
+  if execution_id = "" || String.length execution_id > 256 then Lwt.return (Error "WORKFLOW_EXECUTION_INVALID")
+  else exec record_workflow_execution_request (execution_id, tenant_id, award_id)
+
+let claim_workflow_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.unit ->! Caqti_type.string)
+    "WITH candidate AS (SELECT ar.id, ar.award_id, ar.tenant_id, ar.workflow_execution_id FROM approval_requests ar JOIN integration_settings s ON s.tenant_id = ar.tenant_id AND s.integration_name = 'workflow_engine' AND s.enabled WHERE ar.status = 'pending' AND ar.workflow_execution_id IS NOT NULL AND COALESCE(s.config->>'polling_enabled', 'false') = 'true' ORDER BY ar.updated_at FOR UPDATE SKIP LOCKED LIMIT 1) SELECT COALESCE((SELECT json_build_object('approval_id', id::text, 'award_id', award_id::text, 'tenant_id', tenant_id::text, 'execution_id', workflow_execution_id)::text FROM candidate), '')"
+
+let claim_workflow_execution () =
+  let* result = find claim_workflow_request () in
+  match result with
+  | Error error -> Lwt.return (Error error)
+  | Ok "" -> Lwt.return (Ok None)
+  | Ok value ->
+      (try
+         let open Yojson.Safe.Util in
+         let json = Yojson.Safe.from_string value in
+         Lwt.return (Ok (Some { approval_id = json |> member "approval_id" |> to_string; award_id = json |> member "award_id" |> to_string; tenant_id = json |> member "tenant_id" |> to_string; execution_id = json |> member "execution_id" |> to_string }))
+       with Yojson.Json_error _ | Yojson.Safe.Util.Type_error _ -> Lwt.return (Error "WORKFLOW_PAYLOAD_INVALID"))
+
+let apply_workflow_decision_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t5 string string string string string) ->. Caqti_type.unit)
+    "WITH decision AS (SELECT CASE WHEN ? = 'approved' THEN 'approved' WHEN ? = 'rejected' THEN 'rejected' ELSE NULL END AS value), changed AS (UPDATE approval_requests SET status = (SELECT value FROM decision), decided_at = now(), updated_at = now() WHERE tenant_id = ?::uuid AND id = ?::uuid AND status = 'pending' AND (SELECT value FROM decision) IS NOT NULL RETURNING award_id, status), award AS (UPDATE awards a SET status = CASE WHEN c.status = 'approved' THEN 'approved' ELSE 'rejected_by_operator' END, updated_at = now() FROM changed c WHERE a.tenant_id = ?::uuid AND a.id = c.award_id) SELECT 1"
+
+let apply_workflow_decision ~tenant_id ~approval_id ~decision =
+  if not (List.mem decision [ "approved"; "rejected" ]) then Lwt.return (Error "WORKFLOW_DECISION_INVALID")
+  else exec apply_workflow_decision_request (decision, decision, tenant_id, approval_id, tenant_id)
+
+let mark_workflow_failed_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t2 string string) ->. Caqti_type.unit)
+    "UPDATE approval_requests SET status = 'workflow_failed', updated_at = now() WHERE tenant_id = ?::uuid AND id = ?::uuid AND status = 'pending'"
+
+let mark_workflow_failed ~tenant_id ~approval_id = exec mark_workflow_failed_request (tenant_id, approval_id)
+
 let claim_replay_request =
   let open Caqti_request.Infix in
   (Caqti_type.unit ->! Caqti_type.string)
@@ -161,3 +210,17 @@ let fail_replay_request =
 
 let fail_replay ~id ~tenant_id ~error_code ~error_message =
   exec fail_replay_request (error_code, error_message, id, tenant_id)
+
+let refresh_carrier_scores_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.unit ->! Caqti_type.int)
+    "WITH metrics AS (SELECT c.id, c.tenant_id, COALESCE(count(b.id) FILTER (WHERE b.status = 'withdrawn'), 0)::numeric AS withdrawn, COALESCE(count(b.id), 0)::numeric AS total FROM carriers c LEFT JOIN bids b ON b.tenant_id = c.tenant_id AND b.carrier_id = c.id GROUP BY c.id, c.tenant_id), updated AS (UPDATE carriers c SET withdrawal_rate = CASE WHEN m.total = 0 THEN c.withdrawal_rate ELSE round(m.withdrawn / m.total, 4) END, historical_otd_rate = CASE WHEN m.total = 0 THEN c.historical_otd_rate ELSE greatest(c.historical_otd_rate, round(1 - (m.withdrawn / m.total), 4)) END, reliability_score = CASE WHEN m.total = 0 THEN c.reliability_score ELSE greatest(0::numeric, least(1::numeric, round(1 - (m.withdrawn / m.total), 4))) END, updated_at = now() FROM metrics m WHERE c.id = m.id AND c.tenant_id = m.tenant_id RETURNING c.id) SELECT count(*)::int FROM updated"
+
+let refresh_carrier_scores () = find refresh_carrier_scores_request ()
+
+let compact_report_artifacts_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.unit ->! Caqti_type.int)
+    "WITH archived AS (UPDATE report_exports r SET status = 'archived', updated_at = now() FROM tenants t WHERE r.tenant_id = t.id AND r.status <> 'archived' AND r.created_at < now() - (GREATEST(t.audit_retention_days, 1)::text || ' days')::interval RETURNING r.id) SELECT count(*)::int FROM archived"
+
+let compact_report_artifacts () = find compact_report_artifacts_request ()

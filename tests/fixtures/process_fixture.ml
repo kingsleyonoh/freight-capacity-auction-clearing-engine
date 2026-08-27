@@ -104,6 +104,8 @@ let duckdb database =
   then
     print_endline
       "[{\"duckdb_version\":\"v1.3.2\",\"benchmark_row_count\":432,\"tenant_count\":2,\"month_count\":12,\"auction_count\":48,\"load_count\":144,\"bid_count\":432,\"baseline_eligible_count\":288,\"landed_cost_sum\":\"889488.00\"}]"
+  else if contains stdin_text "SELECT * FROM read_parquet" then
+    print_endline "[{\"tenant_id\":\"tenant-fixture\",\"actual_landed_cost\":1200.0}]"
   else if contains stdin_text "parquet_supported" then
     print_endline "[{\"parquet_supported\":true}]"
   else if contains stdin_text "csv_supported" then

@@ -203,6 +203,18 @@ let submit_bid ~tenant_id ~auction_id ~load_id ~carrier_id ~idempotency_key ~bid
     let* result = with_find request (carrier_id, tenant_id, auction_id, load_id, idempotency_key, bid_amount_cents, service_score_milli, submitted_at, submitted_at) in
     Lwt.return result
 
+let submit_webhook_bid ~tenant_id ~auction_id ~load_id ~carrier_id ~idempotency_key ~bid_amount_cents ~service_score_milli ~submitted_at =
+  if bid_amount_cents < 0 || service_score_milli < 0 || service_score_milli > 1_000 || idempotency_key = "" then Lwt.return (Error (Invalid "BID_INPUT_INVALID"))
+  else
+    let request =
+      let open Caqti_request.Infix in
+      (Caqti_type.(t9 string string string string string int int string string) ->! Caqti_type.string)
+        "WITH owned AS (SELECT a.id AS auction_id, a.tenant_id, a.bid_close_at, l.id AS load_id, c.id AS carrier_id FROM auctions a JOIN loads l ON l.auction_id = a.id AND l.tenant_id = a.tenant_id JOIN lanes ln ON ln.id = l.lane_id AND ln.tenant_id = l.tenant_id JOIN carriers c ON c.id = ?::uuid AND c.tenant_id = a.tenant_id AND c.status = 'active' AND l.equipment_type = ANY(c.equipment_types) WHERE a.tenant_id = ? AND a.id = ? AND a.status IN ('open','draft') AND l.id = ?) INSERT INTO bids (id, tenant_id, auction_id, load_id, carrier_id, idempotency_key, bid_amount, service_score_snapshot, submitted_at, source, status) SELECT gen_random_uuid(), owned.tenant_id, owned.auction_id, owned.load_id, owned.carrier_id, ?, ? / 100.0, ? / 1000.0, ?::timestamp, 'webhook_engine', CASE WHEN ?::timestamp > owned.bid_close_at THEN 'late' ELSE 'submitted' END FROM owned ON CONFLICT (tenant_id, auction_id, idempotency_key) DO UPDATE SET updated_at = bids.updated_at RETURNING id::text"
+    in
+    let open Lwt.Syntax in
+    let* result = with_find request (carrier_id, tenant_id, auction_id, load_id, idempotency_key, bid_amount_cents, service_score_milli, submitted_at, submitted_at) in
+    Lwt.return result
+
 let json_request sql =
   let open Caqti_request.Infix in
   (Caqti_type.string ->! Caqti_type.string) sql
@@ -263,6 +275,11 @@ let activate_policy_request =
   let open Caqti_request.Infix in
   (Caqti_type.(t2 string string) ->! Caqti_type.string)
     "WITH target AS (SELECT id, tenant_id, name FROM auction_policies WHERE tenant_id = ?::uuid AND id = ?::uuid AND status = 'draft'), retired AS (UPDATE auction_policies SET status = 'retired', updated_at = now() WHERE tenant_id = (SELECT tenant_id FROM target) AND name = (SELECT name FROM target) AND status = 'active'), activated AS (UPDATE auction_policies SET status = 'active', updated_at = now() WHERE id = (SELECT id FROM target) RETURNING id::text, name, version, status) SELECT json_build_object('id', id, 'name', name, 'version', version, 'status', status)::text FROM activated"
+
+let policy_replay_gate_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t2 string string) ->! Caqti_type.int)
+    "SELECT CASE WHEN EXISTS (SELECT 1 FROM auction_policies p JOIN replay_runs r ON r.tenant_id = p.tenant_id AND r.policy_id = p.id WHERE p.tenant_id = ?::uuid AND p.id = ?::uuid AND r.status = 'succeeded' AND r.metrics_snapshot->>'promotion_gate' = 'true') THEN 1 ELSE 0 END"
 
 let list_jobs_request = json_request
   "SELECT COALESCE(json_agg(row_to_json(items)), '[]'::json)::text FROM (SELECT id::text, auction_id::text, status, solver_backend, solver_version, error_code, queued_at::text, started_at::text, finished_at::text FROM clearing_jobs WHERE tenant_id = ? ORDER BY queued_at DESC) items"
@@ -383,8 +400,13 @@ let create_policy ~tenant_id ~name ~max_service_risk ~max_single_carrier_share ~
 
 let activate_policy ~tenant_id ~policy_id =
   let open Lwt.Syntax in
-  let* result = with_find activate_policy_request (tenant_id, policy_id) in
-  Lwt.return (json_result result)
+  let* gate = with_find policy_replay_gate_request (tenant_id, policy_id) in
+  match gate with
+  | Error error -> Lwt.return (Error error)
+  | Ok 0 -> Lwt.return (Error (Invalid "POLICY_REPLAY_GATE_REQUIRED"))
+  | Ok _ ->
+      let* result = with_find activate_policy_request (tenant_id, policy_id) in
+      Lwt.return (json_result result)
 
 let list_clearing_jobs ~tenant_id = list_with list_jobs_request tenant_id
 let get_clearing_job ~tenant_id ~job_id =
@@ -413,6 +435,15 @@ let enqueue_integration ~tenant_id ~integration_name ~event_type ~target_url_env
     let open Lwt.Syntax in
     let* result = with_find enqueue_integration_request (tenant_id, integration_name, event_type, target_url_env_var, payload, idempotency_key) in
     Lwt.return (json_result result)
+
+let enqueue_notification_event_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t5 string string string string string) ->. Caqti_type.unit)
+    "INSERT INTO integration_outbox (id, tenant_id, integration_name, event_type, target_url_env_var, payload, idempotency_key, status) SELECT gen_random_uuid(), ?::uuid, 'notification_hub', ?, 'NOTIFICATION_HUB_URL', ?::jsonb, ?, 'queued' WHERE EXISTS (SELECT 1 FROM integration_settings WHERE tenant_id = ?::uuid AND integration_name = 'notification_hub' AND enabled) ON CONFLICT (tenant_id, integration_name, idempotency_key) DO NOTHING"
+
+let enqueue_notification_event ~tenant_id ~event_type ~payload ~idempotency_key =
+  with_exec enqueue_notification_event_request
+    (tenant_id, event_type, payload, idempotency_key, tenant_id)
 let list_reports ~tenant_id = list_with list_reports_request tenant_id
 let list_replays ~tenant_id = list_with list_replays_request tenant_id
 let list_audit_events ~tenant_id = list_with list_audit_request tenant_id
@@ -434,6 +465,15 @@ let record_audit ~tenant_id ~user_id ~entity_type ~entity_id ~event_type ~payloa
   let open Lwt.Syntax in
   let* result = with_exec record_audit_request (tenant_id, user_id, entity_type, entity_id, event_type, payload) in
   Lwt.return result
+
+let record_system_audit_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t5 string string string string string) ->. Caqti_type.unit)
+    "INSERT INTO audit_events (id, tenant_id, actor_user_id, entity_type, entity_id, event_type, event_payload, request_id) SELECT gen_random_uuid(), ?::uuid, u.id, 'integration', ?::uuid, ?, ?::jsonb, NULL FROM users u WHERE u.tenant_id = ?::uuid AND u.role = 'tenant_admin' AND u.is_active ORDER BY u.created_at LIMIT 1"
+
+let record_system_audit ~tenant_id ~entity_id ~event_type ~payload =
+  with_exec record_system_audit_request
+    (tenant_id, entity_id, event_type, payload, tenant_id)
 
 let approve_award_request =
   let open Caqti_request.Infix in
@@ -460,7 +500,12 @@ let approve_award ~tenant_id ~user_id ~award_id ~note =
                "INSERT INTO notifications (id, tenant_id, user_id, event_type, template_id, channel, urgency, payload_snapshot, status) SELECT gen_random_uuid(), a.tenant_id, u.id, 'award_export_ready', 'award-export-ready-v1', 'in_app', 'high', jsonb_build_object('award_id', a.id::text, 'auction_id', a.auction_id::text), 'queued' FROM awards a JOIN users u ON u.tenant_id = a.tenant_id AND u.is_active AND u.role = 'auction_manager' WHERE a.tenant_id = ?::uuid AND a.id = ?::uuid AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.tenant_id = a.tenant_id AND n.user_id = u.id AND n.event_type = 'award_export_ready' AND n.payload_snapshot->>'award_id' = a.id::text)"
            in
            let* notification = with_exec queue_export_ready (tenant_id, award_id) in
-           Lwt.return (match notification with Ok () -> Ok id | Error error -> Error error))
+           (match notification with
+            | Error error -> Lwt.return (Error error)
+            | Ok () ->
+                let payload = Yojson.Safe.to_string (`Assoc [ ("award_id", `String award_id); ("approval_id", `String id) ]) in
+                let* _ = enqueue_notification_event ~tenant_id ~event_type:"freight_auction.award.approved" ~payload ~idempotency_key:("award-approved:" ^ award_id) in
+                Lwt.return (Ok id)))
   | Ok _ -> Lwt.return (Error Not_found)
   | Error _ -> Lwt.return (Error Unavailable)
 
@@ -511,7 +556,12 @@ let export_snapshot ~tenant_id ~auction_id ~format ~user_id =
            (try
               let value = Yojson.Safe.from_string snapshot in
               let* audit = record_audit ~tenant_id ~user_id ~entity_type:"auction" ~entity_id:auction_id ~event_type:"export_downloaded" ~payload:(Yojson.Safe.to_string (`Assoc [ ("report_id", `String id); ("format", `String format) ])) in
-              Lwt.return (match audit with Ok () -> Ok (id, value) | Error error -> Error error)
+              (match audit with
+               | Error error -> Lwt.return (Error error)
+               | Ok () ->
+                   let payload = Yojson.Safe.to_string (`Assoc [ ("auction_id", `String auction_id); ("report_id", `String id); ("format", `String format) ]) in
+                   let* _ = enqueue_notification_event ~tenant_id ~event_type:"freight_auction.export.ready" ~payload ~idempotency_key:("export-ready:" ^ id) in
+                   Lwt.return (Ok (id, value)))
             with Yojson.Json_error _ -> Lwt.return (Error (Invalid "REPORT_SNAPSHOT_INVALID")))
        | Error Unavailable -> Lwt.return (Error Not_found)
        | Error error -> Lwt.return (Error error))
@@ -538,26 +588,35 @@ let update_tenant ~tenant_id ~name ~display_name =
 
 let create_import_request =
   let open Caqti_request.Infix in
-  (Caqti_type.(t9 string string string string string string string string string) ->! Caqti_type.string)
-    "WITH payload AS (SELECT ?::jsonb AS value), created AS (INSERT INTO import_runs (id, tenant_id, auction_id, resource_type, source_filename, source_format, status, mapping_snapshot, validation_summary, row_count, valid_row_count, invalid_row_count, requested_by_user_id, previewed_at) SELECT gen_random_uuid(), ?::uuid, nullif(?, '')::uuid, ?, ?, ?, CASE WHEN (payload.value->>'invalid_row_count')::int > 0 THEN 'quarantined' ELSE 'validated' END, ?::jsonb, payload.value, (payload.value->>'row_count')::int, (payload.value->>'valid_row_count')::int, (payload.value->>'invalid_row_count')::int, ?::uuid, now() FROM payload RETURNING id, tenant_id, auction_id, resource_type), staged AS (INSERT INTO import_staging_rows (id, tenant_id, import_run_id, auction_id, row_number, resource_type, raw_payload, normalized_payload, status) SELECT gen_random_uuid(), c.tenant_id, c.id, c.auction_id, input.row_number::int, c.resource_type, input.value, input.value, 'valid' FROM created c CROSS JOIN jsonb_array_elements(?::jsonb) WITH ORDINALITY AS input(value, row_number) RETURNING id) SELECT c.id::text FROM created c WHERE (SELECT count(*) >= 0 FROM staged)"
+  (Caqti_type.(t10 string string string string string string string string string string) ->! Caqti_type.string)
+    "WITH payload AS (SELECT ?::jsonb AS summary, ?::jsonb AS errors, ?::jsonb AS rows), created AS (INSERT INTO import_runs (id, tenant_id, auction_id, resource_type, source_filename, source_format, status, mapping_snapshot, validation_summary, row_count, valid_row_count, invalid_row_count, requested_by_user_id, previewed_at) SELECT gen_random_uuid(), ?::uuid, nullif(?, '')::uuid, ?, ?, ?, CASE WHEN payload.summary->>'status' = 'quarantined' OR (payload.summary->>'invalid_row_count')::int > 0 THEN 'quarantined' ELSE 'validated' END, ?::jsonb, payload.summary, (payload.summary->>'row_count')::int, (payload.summary->>'valid_row_count')::int, (payload.summary->>'invalid_row_count')::int, ?::uuid, now() FROM payload RETURNING id, tenant_id, auction_id, resource_type), staged AS (INSERT INTO import_staging_rows (id, tenant_id, import_run_id, auction_id, row_number, resource_type, raw_payload, normalized_payload, status, idempotency_key) SELECT gen_random_uuid(), c.tenant_id, c.id, c.auction_id, input.row_number::int, c.resource_type, COALESCE(input.value->'raw_payload', input.value), COALESCE(input.value->'normalized_payload', input.value->'raw_payload', input.value), COALESCE(NULLIF(input.value->>'status', ''), 'valid'), COALESCE(NULLIF(input.value->>'idempotency_key', ''), NULLIF(input.value->'normalized_payload'->>'idempotency_key', ''), NULLIF(input.value->'raw_payload'->>'idempotency_key', '')) FROM created c CROSS JOIN payload p CROSS JOIN jsonb_array_elements(p.rows) WITH ORDINALITY AS input(value, row_number) RETURNING id, import_run_id, row_number), errors AS (INSERT INTO import_row_errors (id, tenant_id, import_run_id, staging_row_id, auction_id, row_number, error_code, error_message, field_name, severity, quarantine_reason) SELECT gen_random_uuid(), c.tenant_id, c.id, s.id, c.auction_id, (entry.value->>'row_number')::int, COALESCE(NULLIF(entry.value->>'error_code', ''), 'IMPORT_VALIDATION_ERROR'), COALESCE(NULLIF(entry.value->>'error_message', ''), 'The row failed import validation.'), NULLIF(entry.value->>'field_name', ''), COALESCE(NULLIF(entry.value->>'severity', ''), 'error'), NULLIF(entry.value->>'quarantine_reason', '') FROM created c CROSS JOIN payload p CROSS JOIN jsonb_array_elements(p.errors) AS entry(value) LEFT JOIN staged s ON s.import_run_id = c.id AND s.row_number = (entry.value->>'row_number')::int RETURNING id) SELECT c.id::text FROM created c WHERE (SELECT count(*) >= 0 FROM staged) AND (SELECT count(*) >= 0 FROM errors)"
 
-let create_import ~tenant_id ~user_id ~resource_type ~source_filename ~source_format ~auction_id ~mapping ~staging_rows ~row_count ~valid_row_count ~invalid_row_count =
-  if row_count < 0 || valid_row_count < 0 || invalid_row_count < 0 || valid_row_count + invalid_row_count > row_count then
+let create_import ~tenant_id ~user_id ~resource_type ~source_filename ~source_format ~auction_id ~mapping ~staging_rows ~validation_summary ~row_errors ~row_count ~valid_row_count ~invalid_row_count =
+  if row_count < 0 || valid_row_count < 0 || invalid_row_count < 0 || valid_row_count + invalid_row_count <> row_count then
     Lwt.return (Error (Invalid "IMPORT_COUNTS_INVALID"))
   else
-    let summary = Yojson.Safe.to_string (`Assoc [ ("row_count", `Int row_count); ("valid_row_count", `Int valid_row_count); ("invalid_row_count", `Int invalid_row_count) ]) in
     let open Lwt.Syntax in
-    let* result = with_find create_import_request (summary, tenant_id, Option.value ~default:"" auction_id, resource_type, source_filename, source_format, mapping, user_id, staging_rows) in
+    let* result = with_find create_import_request (validation_summary, row_errors, staging_rows, tenant_id, Option.value ~default:"" auction_id, resource_type, source_filename, source_format, mapping, user_id) in
     Lwt.return result
 
 let get_import_request =
   let open Caqti_request.Infix in
   (Caqti_type.(t2 string string) ->! Caqti_type.string)
-    "SELECT json_build_object('id', id::text, 'resource_type', resource_type, 'source_filename', source_filename, 'source_format', source_format, 'status', status, 'mapping', mapping_snapshot, 'validation_summary', validation_summary, 'row_count', row_count, 'valid_row_count', valid_row_count, 'invalid_row_count', invalid_row_count, 'staging_preview', COALESCE((SELECT json_agg(json_build_object('row_number', s.row_number, 'raw_payload', s.raw_payload, 'status', s.status) ORDER BY s.row_number) FROM import_staging_rows s WHERE s.tenant_id = import_runs.tenant_id AND s.import_run_id = import_runs.id), '[]'::json), 'previewed_at', previewed_at::text, 'committed_at', committed_at::text)::text FROM import_runs WHERE tenant_id = ?::uuid AND id = ?::uuid"
+    "SELECT json_build_object('id', id::text, 'resource_type', resource_type, 'source_filename', source_filename, 'source_format', source_format, 'status', status, 'mapping', mapping_snapshot, 'validation_summary', validation_summary, 'row_count', row_count, 'valid_row_count', valid_row_count, 'invalid_row_count', invalid_row_count, 'staging_preview', COALESCE((SELECT json_agg(json_build_object('row_number', s.row_number, 'raw_payload', s.raw_payload, 'normalized_payload', s.normalized_payload, 'status', s.status) ORDER BY s.row_number) FROM import_staging_rows s WHERE s.tenant_id = import_runs.tenant_id AND s.import_run_id = import_runs.id), '[]'::json), 'row_errors', COALESCE((SELECT json_agg(json_build_object('row_number', e.row_number, 'error_code', e.error_code, 'error_message', e.error_message, 'field_name', e.field_name, 'severity', e.severity, 'quarantine_reason', e.quarantine_reason) ORDER BY e.row_number, e.id) FROM import_row_errors e WHERE e.tenant_id = import_runs.tenant_id AND e.import_run_id = import_runs.id), '[]'::json), 'previewed_at', previewed_at::text, 'committed_at', committed_at::text)::text FROM import_runs WHERE tenant_id = ?::uuid AND id = ?::uuid"
 
 let get_import ~tenant_id ~import_id =
   let open Lwt.Syntax in
   let* result = with_find get_import_request (tenant_id, import_id) in
+  Lwt.return (json_result result)
+
+let import_context_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t4 string string string string) ->! Caqti_type.string)
+    "SELECT json_build_object('carrier_ids', COALESCE((SELECT json_agg(id::text ORDER BY id) FROM carriers WHERE tenant_id = ?::uuid), '[]'::json), 'suspended_carrier_ids', COALESCE((SELECT json_agg(id::text ORDER BY id) FROM carriers WHERE tenant_id = ?::uuid AND status = 'suspended'), '[]'::json), 'lane_ids', COALESCE((SELECT json_agg(id::text ORDER BY id) FROM lanes WHERE tenant_id = ?::uuid), '[]'::json), 'load_ids', COALESCE((SELECT json_agg(id::text ORDER BY id) FROM loads WHERE tenant_id = ?::uuid), '[]'::json))::text"
+
+let import_context ~tenant_id =
+  let open Lwt.Syntax in
+  let* result = with_find import_context_request (tenant_id, tenant_id, tenant_id, tenant_id) in
   Lwt.return (json_result result)
 
 let commit_import_request =
@@ -565,10 +624,22 @@ let commit_import_request =
   (Caqti_type.(t3 string string string) ->! Caqti_type.string)
     "WITH target AS (SELECT * FROM import_runs WHERE tenant_id = ?::uuid AND id = ?::uuid AND ? = 'true' AND status IN ('validated','uploaded') AND invalid_row_count = 0), carrier_rows AS (INSERT INTO carriers (id, tenant_id, legal_name, display_name, equipment_types, status) SELECT gen_random_uuid(), t.tenant_id, COALESCE(NULLIF(s.raw_payload->>'legal_name', ''), s.raw_payload->>'name'), COALESCE(NULLIF(s.raw_payload->>'display_name', ''), s.raw_payload->>'legal_name', s.raw_payload->>'name'), ARRAY[COALESCE(NULLIF(s.raw_payload->>'equipment_type', ''), 'dry_van')]::text[], COALESCE(NULLIF(s.raw_payload->>'status', ''), 'active') FROM target t JOIN import_staging_rows s ON s.tenant_id = t.tenant_id AND s.import_run_id = t.id WHERE t.resource_type = 'carriers' AND s.status = 'valid' AND COALESCE(NULLIF(s.raw_payload->>'legal_name', ''), s.raw_payload->>'name', '') <> '' ON CONFLICT (tenant_id, mc_number) DO NOTHING), lane_rows AS (INSERT INTO lanes (id, tenant_id, origin_region, destination_region, equipment_type, distance_miles, reserve_price, status) SELECT gen_random_uuid(), t.tenant_id, s.raw_payload->>'origin_region', s.raw_payload->>'destination_region', COALESCE(NULLIF(s.raw_payload->>'equipment_type', ''), 'dry_van'), GREATEST(COALESCE(NULLIF(s.raw_payload->>'distance_miles', '')::int, 1), 1), GREATEST(COALESCE(NULLIF(s.raw_payload->>'reserve_price', '')::numeric, 0), 0), COALESCE(NULLIF(s.raw_payload->>'status', ''), 'active') FROM target t JOIN import_staging_rows s ON s.tenant_id = t.tenant_id AND s.import_run_id = t.id WHERE t.resource_type = 'lanes' AND s.status = 'valid' AND COALESCE(s.raw_payload->>'origin_region', '') <> '' AND COALESCE(s.raw_payload->>'destination_region', '') <> '' ON CONFLICT (tenant_id, origin_region, destination_region, equipment_type) DO NOTHING), load_rows AS (INSERT INTO loads (id, tenant_id, auction_id, lane_id, external_ref, pickup_window_start, pickup_window_end, delivery_window_start, delivery_window_end, weight_lbs, equipment_type, service_priority, status) SELECT gen_random_uuid(), t.tenant_id, t.auction_id, (s.raw_payload->>'lane_id')::uuid, COALESCE(NULLIF(s.raw_payload->>'external_ref', ''), s.raw_payload->>'external_id'), (s.raw_payload->>'pickup_start')::timestamp, (s.raw_payload->>'pickup_end')::timestamp, (s.raw_payload->>'delivery_start')::timestamp, (s.raw_payload->>'delivery_end')::timestamp, GREATEST(COALESCE(NULLIF(s.raw_payload->>'weight_lbs', '')::int, 1), 1), COALESCE(NULLIF(s.raw_payload->>'equipment_type', ''), 'dry_van'), COALESCE(NULLIF(s.raw_payload->>'service_priority', ''), 'standard'), 'eligible' FROM target t JOIN import_staging_rows s ON s.tenant_id = t.tenant_id AND s.import_run_id = t.id WHERE t.resource_type = 'loads' AND t.auction_id IS NOT NULL AND s.status = 'valid' AND COALESCE(s.raw_payload->>'lane_id', '') <> '' AND COALESCE(s.raw_payload->>'external_ref', s.raw_payload->>'external_id', '') <> '' ON CONFLICT (tenant_id, auction_id, external_ref) DO NOTHING), bid_rows AS (INSERT INTO bids (id, tenant_id, auction_id, load_id, carrier_id, idempotency_key, bid_amount, service_score_snapshot, submitted_at, source, status) SELECT gen_random_uuid(), t.tenant_id, t.auction_id, (s.raw_payload->>'load_id')::uuid, (s.raw_payload->>'carrier_id')::uuid, COALESCE(NULLIF(s.raw_payload->>'idempotency_key', ''), 'import-' || s.row_number::text), GREATEST(COALESCE(NULLIF(s.raw_payload->>'bid_amount', '')::numeric, 0), 0), LEAST(GREATEST(COALESCE(NULLIF(s.raw_payload->>'service_score', '')::numeric, 0.75), 0), 1), (s.raw_payload->>'submitted_at')::timestamp, 'csv_import', 'submitted' FROM target t JOIN import_staging_rows s ON s.tenant_id = t.tenant_id AND s.import_run_id = t.id WHERE t.resource_type = 'bids' AND t.auction_id IS NOT NULL AND s.status = 'valid' AND COALESCE(s.raw_payload->>'load_id', '') <> '' AND COALESCE(s.raw_payload->>'carrier_id', '') <> '' AND COALESCE(s.raw_payload->>'submitted_at', '') <> '' ON CONFLICT (tenant_id, auction_id, idempotency_key) DO NOTHING), staged AS (UPDATE import_staging_rows s SET status = 'committed', updated_at = now() FROM target t WHERE s.tenant_id = t.tenant_id AND s.import_run_id = t.id AND s.status = 'valid' RETURNING s.id), finished AS (UPDATE import_runs i SET status = 'committed', committed_at = now(), updated_at = now() FROM target t WHERE i.id = t.id AND i.tenant_id = t.tenant_id AND (SELECT count(*) >= 0 FROM staged) RETURNING i.id, i.status, i.row_count, i.valid_row_count, i.invalid_row_count) SELECT json_build_object('id', id::text, 'status', status, 'row_count', row_count, 'valid_row_count', valid_row_count, 'invalid_row_count', invalid_row_count)::text FROM finished"
 
+let import_commit_state_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t2 string string) ->! Caqti_type.(t2 string int))
+    "SELECT status, invalid_row_count FROM import_runs WHERE tenant_id = ?::uuid AND id = ?::uuid"
+
 let commit_import ~tenant_id ~import_id ~confirm =
   let open Lwt.Syntax in
-  let* result = with_find commit_import_request (tenant_id, import_id, if confirm then "true" else "false") in
-  Lwt.return (json_result result)
+  if not confirm then Lwt.return (Error (Invalid "IMPORT_CONFIRM_REQUIRED"))
+  else
+    let* state = with_find import_commit_state_request (tenant_id, import_id) in
+    match state with
+    | Error error -> Lwt.return (Error error)
+    | Ok (status, invalid_count) when List.mem status [ "validated"; "uploaded" ] && invalid_count = 0 ->
+        let* result = with_find commit_import_request (tenant_id, import_id, "true") in
+        Lwt.return (json_result result)
+    | Ok _ -> Lwt.return (Error Conflict)
 
 let notification_preferences_request =
   let open Caqti_request.Infix in
@@ -627,3 +698,11 @@ let get_replay ~tenant_id ~replay_id =
   let open Lwt.Syntax in
   let* result = with_find get_replay_request (tenant_id, replay_id) in
   Lwt.return (json_result result)
+
+let cancel_replay_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.(t2 string string) ->. Caqti_type.unit)
+    "UPDATE replay_runs SET status = 'cancelled', finished_at = now(), updated_at = now() WHERE tenant_id = ?::uuid AND id = ?::uuid AND status IN ('draft','queued','running')"
+
+let cancel_replay ~tenant_id ~replay_id =
+  with_exec cancel_replay_request (tenant_id, replay_id)

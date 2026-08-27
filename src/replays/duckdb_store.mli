@@ -34,6 +34,9 @@ val health : t -> (health, error) result Lwt.t
 val csv_capability : t -> (bool, error) result Lwt.t
 val parquet_capability : t -> (bool, error) result Lwt.t
 
+val read_parquet_rows :
+  t -> fixture_path:string -> (Yojson.Safe.t list, error) result Lwt.t
+
 val benchmark_parquet :
   t -> fixture_path:string -> (benchmark, error) result Lwt.t
 

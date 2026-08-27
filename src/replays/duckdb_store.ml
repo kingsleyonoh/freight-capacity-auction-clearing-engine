@@ -300,6 +300,28 @@ let csv_capability store =
 let parquet_capability store =
   capability store (parquet_query store.replay_root) "parquet_supported"
 
+let read_parquet_rows store ~fixture_path =
+  match
+    regular_file_beneath ~root:store.replay_root ~extension:".parquet"
+      fixture_path
+  with
+  | None -> Lwt.return (Error Path_invalid)
+  | Some fixture ->
+      let query =
+        base_settings (Filename.dirname fixture)
+        ^ "SELECT * FROM read_parquet('"
+        ^ sql_literal fixture ^ "');\n"
+      in
+      invoke_memory store query >|= function
+      | Error error -> Error error
+      | Ok output -> (
+          match Yojson.Safe.from_string output with
+          | `List rows when List.for_all (function `Assoc _ -> true | _ -> false) rows ->
+              (match check_row_count store (List.length rows) with
+               | Ok () -> Ok rows
+               | Error error -> Error error)
+          | _ -> Error Malformed_output)
+
 let benchmark_parquet store ~fixture_path =
   match
     regular_file_beneath ~root:store.replay_root ~extension:".parquet"
