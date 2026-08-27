@@ -1,0 +1,2 @@
+case_id,auction_ref,load_ref,carrier_ref,idempotency_key,amount,currency,capacity_units,equipment_type,submitted_at,valid_until,carrier_service_level
+valid_drift,AUC-T1-SPOT-001,LOAD-T1-REEFER-001,CARRIER-T1-ACTIVE-001,idem-drift-001,1450.00,USD,1,REEFER,2025-01-15T11:59:59Z,2025-01-15T13:00:00Z,premium

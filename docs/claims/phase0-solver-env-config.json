@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "task": "Close SOLVER_BACKEND, SOLVER_TIMEOUT_SECONDS, PRODUCTION_CLEARING_REQUIRES_SOLVER, HEURISTIC_FALLBACK_FOR_REPLAY, and MINIZINC_BINARY_PATH integrated configuration evidence — PRD §§3/5.3/6.2/9/14",
+  "operator": "mesh:phase0-solver-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T09:22:21Z",
+  "completedAt": "2026-07-15T11:36:54+01:00",
+  "expectedFiles": [
+    "docs/claims/phase0-solver-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/feature_flags.ml",
+    "config/feature_flags.mli",
+    "src/solver/solver_backend.ml",
+    "src/solver/solver_backend.mli",
+    "bin/solver_smoke.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "tests/unit/feature_flags_test.ml",
+    "tests/unit/solver_backend_test.ml",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    ".agent/knowledge/foundation/solver-process-boundary.md",
+    ".agent/knowledge/modules/src-solver.md",
+    "docs/progress.md"
+  ]
+}

@@ -1,7 +1,12 @@
 # OCaml / Dune / opam
 _build/
 _opam/
+.opam/
+.opam-root/
+opam-root/
+.opam-cache/
 *.install
+!*.opam.locked
 
 # JavaScript development tooling
 node_modules/
@@ -42,8 +47,6 @@ docs/architect_journal.md
 # docs/*prd*.md
 
 # Klevar local operational tooling — never application source
-# The retired legacy runtime is intentionally not seeded; this entry prevents accidental restoration.
-tools/klevar-yolo-runtime/
 tools/klevar-pi-package/
 .yolo/refresh/
 .yolo/runtime/
@@ -53,14 +56,10 @@ tools/klevar-pi-package/
 .yolo/pi-sessions/
 .yolo/subagent-prompts/
 .yolo/subagent-runs/
-.yolo/events/
-.yolo/logs/
 .yolo/command-runs/
-.yolo/runtime-lock.json
-.yolo/runtime-pid.json
-.yolo/command-cache.json
 
-# Runtime v2 active-run handoff evidence under .yolo/runs/ remains trackable.
+# Runtime v2 active-run facts under .yolo/runs/ remain trackable.
+# Retired runtime/controller state is not seeded or restored.
 # .yolo/
 
 # Pi local operational artifacts

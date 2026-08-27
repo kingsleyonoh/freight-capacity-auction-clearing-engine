@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "fca-product-build",
+  "assetRoot": "../src/ui/assets",
+  "entries": ["style"],
+  "routes": ["/"],
+  "assets": {
+    "style": { "file": "style.css", "kind": "shell", "imports": [], "dynamicImports": [], "routes": ["/"] }
+  }
+}

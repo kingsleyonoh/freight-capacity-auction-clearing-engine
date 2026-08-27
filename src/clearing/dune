@@ -1,0 +1,5 @@
+(library
+ (name fca_clearing)
+ (wrapped false)
+ (modules model_builder scoring capability_registry clearing_service)
+(libraries digestif yojson))

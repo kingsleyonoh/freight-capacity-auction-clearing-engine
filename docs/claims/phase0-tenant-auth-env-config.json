@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "task": "Close SELF_REGISTRATION_ENABLED, DEFAULT_TENANT_NAME, DEFAULT_ADMIN_EMAIL, SEED_SAMPLE_DATA, and AUTH_TOKEN_TTL_MINUTES configuration evidence — PRD §§9/11/14",
+  "operator": "mesh:phase0-tenant-auth-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T08:12:36.514025Z",
+  "completedAt": "2026-07-15T08:27:12.965386Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-11-50-986Z-h21jwl/workers/phase0-tenant-auth-env-config-closure/gate-full-dune-runtest.txt",
+      "value": "Exact OCaml 5.2.0 full dune runtest --force --no-buffer passed in a fresh disposable container."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-11-50-986Z-h21jwl/workers/phase0-tenant-auth-env-config-closure/gate-summary.txt",
+      "value": "Focused, full, static, build, formatter, architecture, npm, limits, diff, env-ignore, and redacted security gates recorded."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-11-50-986Z-h21jwl/workers/phase0-tenant-auth-env-config-closure/config-rule-map-lines.txt",
+      "value": "Typed tenant/auth behavior, tests, and safe env examples are path-mapped."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-11-50-986Z-h21jwl/workers/phase0-tenant-auth-env-config-closure/diff-summary.txt",
+      "value": "Minimal TTL bound repair, evidence tests, and exactly-five progress closure."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-tenant-auth-env-config.json",
+    ".env.local",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/runtime_config.mli",
+    "tests/unit/config_test_support.ml",
+    "tests/unit/runtime_config_inventory_test.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "docs/progress.md"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "infeasible_hard_constraints",
+  "tenant_id": "11111111-1111-4111-8111-111111111111",
+  "auction": {
+    "auction_id": "00000001-0000-4000-8000-000000000001",
+    "mode": "single_round_spot",
+    "bid_close_at": "2025-02-01T12:00:00Z"
+  },
+  "policy": {
+    "version": 1,
+    "currency": "USD",
+    "service_risk_cap": "0.1500",
+    "service_risk_applies_to": [
+      "priority"
+    ],
+    "max_carrier_share": "0.5000",
+    "tie_break": [
+      "total_score_micros",
+      "bid_amount",
+      "submitted_at",
+      "bid_id"
+    ]
+  },
+  "loads": [
+    {
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "equipment_type": "REEFER",
+      "capacity_units": 1,
+      "reserve_price": "800.00",
+      "service_priority": "standard"
+    }
+  ],
+  "carriers": [
+    {
+      "carrier_id": "00000201-0000-4000-8000-000000000201",
+      "status": "active",
+      "capacity_units": 2,
+      "equipment_types": [
+        "REEFER",
+        "DRY_VAN"
+      ],
+      "service_risk_micros": 50000
+    },
+    {
+      "carrier_id": "00000202-0000-4000-8000-000000000202",
+      "status": "active",
+      "capacity_units": 2,
+      "equipment_types": [
+        "REEFER",
+        "DRY_VAN"
+      ],
+      "service_risk_micros": 60000
+    },
+    {
+      "carrier_id": "00000203-0000-4000-8000-000000000203",
+      "status": "active",
+      "capacity_units": 2,
+      "equipment_types": [
+        "REEFER",
+        "DRY_VAN"
+      ],
+      "service_risk_micros": 70000
+    },
+    {
+      "carrier_id": "00000204-0000-4000-8000-000000000204",
+      "status": "active",
+      "capacity_units": 2,
+      "equipment_types": [
+        "REEFER",
+        "DRY_VAN"
+      ],
+      "service_risk_micros": 80000
+    }
+  ],
+  "eligible_bids": [
+    {
+      "bid_id": "00000301-0000-4000-8000-000000000301",
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "carrier_id": "00000201-0000-4000-8000-000000000201",
+      "bid_amount": "1450.00",
+      "submitted_at": "2025-02-01T11:50:00Z",
+      "valid_until": "2025-02-01T13:00:00Z",
+      "total_score_micros": 100000
+    }
+  ],
+  "excluded_bids": []
+}

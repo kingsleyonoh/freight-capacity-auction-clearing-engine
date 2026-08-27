@@ -1,0 +1,1 @@
+-- Intentionally empty: prevents user/global DuckDB init state from affecting generation.

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Frontend evidence controlled fixture</title>
+  <style>
+    :root { color: #17212b; background: #ffffff; }
+    body { margin: 2rem; color: #17212b; background: #ffffff; font: 16px/1.5 sans-serif; }
+    button, input { min-height: 44px; }
+    :focus-visible { outline: 3px solid #005fcc; outline-offset: 3px; }
+    table { border-collapse: collapse; margin-block: 1rem; }
+    th, td { border: 1px solid #52606d; padding: 0.5rem; text-align: left; }
+    .large-copy { color: #334e68; background: #ffffff; font-size: 24px; font-weight: 700; }
+    .essential-graphic { color: #1f5a7a; background: #ffffff; border: 3px solid currentColor; padding: 1rem; }
+    .risk-status { color: #8b1e1e; background: #ffffff; font-weight: 700; }
+    .status-icon { margin-inline-end: 0.4rem; }
+    .motion-probe { animation: evidence-pulse 1s linear infinite; transition: transform 1s ease; }
+    @keyframes evidence-pulse { from { opacity: 0.8; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .motion-probe { animation-duration: 0.001ms; animation-iteration-count: 1; transition-duration: 0.001ms; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Freight evidence fixture</h1>
+    <p class="large-copy">Controlled contract subject — not a product route.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="awards-heading">
+      <h2 id="awards-heading">Award table</h2>
+      <table>
+        <caption>Proposed lane awards</caption>
+        <thead><tr><th scope="col">Lane</th><th scope="col">Carrier</th><th scope="col">Cost</th><th scope="col">Action</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Lane A</th><td>Carrier North</td><td>1200 USD</td><td><button type="button" data-row-action aria-controls="lane-a-detail">Open Lane A details</button></td></tr>
+        </tbody>
+      </table>
+      <div id="lane-a-detail" role="region" aria-label="Lane A detail" tabindex="-1" hidden>Lane A · Carrier North · 1200 USD</div>
+    </section>
+
+    <section aria-labelledby="import-heading">
+      <h2 id="import-heading">Import wizard</h2>
+      <ol aria-label="Import steps">
+        <li>Import step 1: Upload</li>
+        <li aria-current="step">Import step 2: Map columns</li>
+        <li>Import step 3: Confirm</li>
+      </ol>
+      <label for="equipment-column">Equipment column</label>
+      <input id="equipment-column" aria-describedby="equipment-error" value="">
+      <p id="equipment-error" role="alert">Choose the source column containing equipment type.</p>
+      <button type="button" id="review-warning">Review import warning</button>
+      <dialog aria-labelledby="warning-title">
+        <h3 id="warning-title">Import warning review</h3>
+        <p>Two rows have unknown equipment values.</p>
+        <button type="button" id="acknowledge-warning">Acknowledge warning</button>
+      </dialog>
+    </section>
+
+    <section aria-labelledby="frontier-heading">
+      <h2 id="frontier-heading">Frontier evidence</h2>
+      <figure class="essential-graphic" role="img" aria-label="Cost and service frontier" aria-describedby="chart-summary">
+        <figcaption id="chart-summary">Lane A costs 1200 USD at 95% service. Lane B costs 1400 USD at 98% service.</figcaption>
+        <div aria-hidden="true">● Lane A ── ● Lane B</div>
+      </figure>
+      <table id="chart-data">
+        <caption>Equivalent cost and service frontier data</caption>
+        <thead><tr><th scope="col">Lane</th><th scope="col">Cost</th><th scope="col">Service</th></tr></thead>
+        <tbody><tr><th scope="row">Lane A</th><td>1200 USD</td><td>95%</td></tr><tr><th scope="row">Lane B</th><td>1400 USD</td><td>98%</td></tr></tbody>
+      </table>
+    </section>
+
+    <p class="risk-status"><span class="status-icon" aria-hidden="true">▲</span>High service risk</p>
+    <p class="motion-probe">Reduced-motion behavior probe</p>
+  </main>
+
+  <script>
+    const rowAction = document.querySelector('[data-row-action]');
+    const detail = document.querySelector('#lane-a-detail');
+    rowAction.addEventListener('click', () => {
+      detail.hidden = false;
+      detail.focus();
+    });
+
+    const opener = document.querySelector('#review-warning');
+    const dialog = document.querySelector('dialog');
+    const acknowledge = document.querySelector('#acknowledge-warning');
+    opener.addEventListener('click', () => {
+      dialog.showModal();
+      acknowledge.focus();
+    });
+    acknowledge.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => opener.focus());
+  </script>
+</body>
+</html>

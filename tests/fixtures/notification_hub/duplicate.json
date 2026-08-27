@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "adapter": "notification_hub",
+  "case_id": "duplicate",
+  "direction": "outbound",
+  "evidence_scope": "recorded_contract_only",
+  "network_policy": "no_live_call",
+  "tenant_scope": {
+    "tenant_fixture": "../tenants.json",
+    "resolution_stage": "tenant_known",
+    "tenant_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "request": {
+    "method": "POST",
+    "route_template": "/api/events",
+    "header_names": [
+      "Content-Type",
+      "Authorization"
+    ],
+    "redacted_headers": [
+      {
+        "name": "Authorization",
+        "value": "[REDACTED_FIXTURE]"
+      }
+    ],
+    "body": {
+      "event_type": "export_ready",
+      "export_ref": "EXPORT-RECORDED-1"
+    }
+  },
+  "transport": {
+    "outcome": "response",
+    "attempt": 1,
+    "elapsed_ms_bucket": "under_5000"
+  },
+  "response": {
+    "status": 200,
+    "header_names": [
+      "Content-Type"
+    ],
+    "redacted_headers": [],
+    "body": {
+      "status": "duplicate",
+      "duplicate_of": "success"
+    }
+  },
+  "expected": {
+    "adapter_status": "duplicate",
+    "outbox_status": "delivered",
+    "retry_scheduled": false,
+    "duplicate_of": "success",
+    "canonical_state_mutated": false,
+    "audit_code": "RECORDED_CONTRACT_OK",
+    "response_status": 200
+  }
+}

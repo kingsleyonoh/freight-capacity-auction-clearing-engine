@@ -1,0 +1,5 @@
+(library
+ (name fca_application)
+ (wrapped false)
+ (modules store job_store maintenance)
+ (libraries fca_shared fca_clearing yojson caqti caqti-lwt caqti-driver-postgresql digestif lwt.unix))

@@ -1,6 +1,6 @@
 # Freight Capacity Auction Clearing Engine — Module Context
 
-> Companion to `CODEBASE_CONTEXT.md`. Planned architecture from PRD §5 and §9. Last updated: 2026-07-09.
+> Companion to `CODEBASE_CONTEXT.md`. Planned architecture from PRD §5 and §9. Last updated: 2026-07-14.
 
 ## Dependency Hierarchy
 
@@ -12,7 +12,7 @@ imports → shared, auth, tenants, carriers, policies
 auctions → shared, auth, tenants, carriers, policies, imports
 solver → shared
 clearing → shared, auctions, carriers, policies, solver
-approvals → shared, auth, clearing, integrations
+approvals → shared, auth, clearing
 replays → shared, auctions, policies, clearing, solver
 reports → shared, tenants, auctions, clearing, approvals
 notifications → shared, auth, tenants, auctions, approvals, reports
@@ -20,6 +20,8 @@ integrations → shared, auth, auctions, approvals, notifications
 jobs → shared and owning domain services
 ui → shared, auth, and domain service interfaces
 ```
+
+`approvals` owns an integration-neutral workflow-approval port and depends only on `shared`, `auth`, and `clearing`. `integrations` depends downward on `approvals`, implements the port, and the executable composition layer injects that implementation; `approvals` never imports `integrations`.
 
 `shared` alone owns DB/Redis/HTTP/event infrastructure. Dream handlers validate/authenticate, call a service, and render/serialize. Solver, DuckDB CLI, and external HTTP stay behind typed adapters.
 
@@ -34,11 +36,11 @@ ui → shared, auth, and domain service interfaces
 | Auctions | Lifecycle, loads, bids, close/clear requests | `src/auctions/` |
 | Clearing | Capability registry, model, score, explanation, persistence | `src/clearing/` |
 | Solver | Process protocol, MiniZinc, OR-Tools, replay-only heuristic | `src/solver/` |
-| Approvals | Local canonical approval state and optional workflow bridge | `src/approvals/` |
+| Approvals | Local canonical approval state and integration-neutral workflow-approval port | `src/approvals/` |
 | Replays | DuckDB dataset, baseline/policy runner, metrics | `src/replays/` |
 | Reports | Frozen tenant/auction snapshot, renderer, export | `src/reports/` |
 | Notifications | In-app derived state and preferences | `src/notifications/` |
-| Integrations | Optional Hub/Workflow/Webhook adapters and health | `src/integrations/` |
+| Integrations | Optional Hub/Workflow/Webhook adapters, approval-port implementation, and health | `src/integrations/` |
 | Jobs | Clearing/import/replay/notification/retry/scheduled work | `src/jobs/`, `bin/worker.ml` |
 | UI | Dream pages, fragments, layouts, and assets | `src/ui/` |
 

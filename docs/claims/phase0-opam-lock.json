@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "task": "Pin the project-local opam switch to exact OCaml 5.2.0 and establish a tracked test-inclusive lock generation, locked-install, and drift-verification workflow — PRD §3",
+  "operator": "mesh:phase0-opam-formatter-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T21:17:00Z",
+  "completedAt": "2026-07-16T12:05:04Z",
+  "continuationFrom": [
+    "mesh-2026-07-16T10-59-22-404Z-f7mpll",
+    "mesh-2026-07-16T11-38-18-947Z-h3jjrt"
+  ],
+  "acceptanceScope": "Linux x86_64 with opam 2.5.2 and ocaml-base-compiler 5.2.0. Native Windows fresh-switch/actual PowerShell-verifier acceptance and a Linux/Windows CI matrix remain unproven.",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T09-55-24-039Z-09at2c/workers/continue-phase0-opam-lock-implementation/fresh-locked-install-linux-final.txt",
+      "value": "Fresh Linux locked install reports opam 2.5.2, ocamlc 5.2.0, exact compiler invariant, Alcotest 1.9.1, OUnit2 2.2.7, and all locked dependencies installed."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/actual-linux-verifier.txt",
+      "value": "Retained exact Linux switch reports opam 2.5.2, ocamlc 5.2.0, invariant ocaml-base-compiler = 5.2.0, and OPAM_LOCK_OK after lint, locked reconciliation, installed test-dependency checks, safe temporary regeneration, and byte-equal drift verification."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/opam-contract-posix.txt",
+      "value": "POSIX verifier contract passed mismatch, drift, unsafe-content, quoting, cleanup, no-mutation, and Alcotest/OUnit2 failure cases."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/opam-contract-powershell.txt",
+      "value": "PowerShell fake-client verifier contract passed; this is deterministic script-contract evidence only, not native Windows toolchain acceptance."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/formatter-correction.diff",
+      "value": "Dune's canonical formatter changed only whitespace layout and normalized the Dune file to non-executable mode; non-whitespace hashes before and after are identical."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/fmt-green.txt",
+      "value": "Canonical dune build @fmt exits 0 in the synchronized accepted Linux copy."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/dune-runtest-force.txt",
+      "value": "Exact OCaml 5.2.0 locked switch forced full Dune test suite passed."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/dune-static-architecture.txt",
+      "value": "Exact switch @check, @all, and architecture executable all exited 0."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/canonical-integration.txt",
+      "value": "Fresh canonical PostgreSQL 16, Redis 7, outbound HTTP, Dream, and lifecycle integration passed with disposable resource cleanup."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T11-55-51-687Z-ey8dne/workers/phase0-opam-formatter-closure/playwright-all-projects.txt",
+      "value": "All six Playwright checks passed across desktop-1440, tablet-768, and mobile-390."
+    },
+    {
+      "type": "file",
+      "path": "docs/dependency-lock.md",
+      "value": "Documents tracked test-inclusive full lock generation, fresh locked install, existing-switch reconciliation, drift verification, stable exits, Linux acceptance scope, and explicit native Windows/CI gaps."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-opam-lock.json",
+    "docs/progress.md",
+    "docs/dependency-lock.md",
+    "freight_capacity_auction_clearing_engine.opam.locked",
+    "scripts/verify-opam-lock.sh",
+    "scripts/verify-opam-lock.ps1",
+    "tests/tooling/opam-lock-contract.sh",
+    "tests/tooling/opam-lock-contract.ps1",
+    "tests/unit/dune",
+    ".gitattributes",
+    ".gitignore"
+  ]
+}

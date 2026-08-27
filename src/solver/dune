@@ -1,0 +1,5 @@
+(library
+ (name fca_solver)
+ (wrapped false)
+ (modules solver_backend solver_execution)
+ (libraries fca_process_runner lwt.unix yojson unix digestif))

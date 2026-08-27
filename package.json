@@ -1,0 +1,42 @@
+{
+  "name": "freight-capacity-auction-clearing-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser assets and end-to-end tooling for the Freight Capacity Auction Clearing Engine",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/ui/assets/input.css -o ./src/ui/static/app.css --minify",
+    "build:htmx": "node ./scripts/vendor-htmx.mjs",
+    "test:unit": "node ./scripts/project-command.mjs unit",
+    "test:integration": "node ./scripts/project-command.mjs integration",
+    "test:e2e": "node ./scripts/project-command.mjs e2e",
+    "test:full": "node ./scripts/project-command.mjs full",
+    "lint": "node ./scripts/project-command.mjs lint",
+    "format": "node ./scripts/project-command.mjs format",
+    "build": "node ./scripts/project-command.mjs build",
+    "replay:benchmark": "node ./scripts/project-command.mjs replay-benchmark",
+    "solver:smoke": "node ./scripts/project-command.mjs solver-smoke",
+    "test:e2e:config": "cross-env FCA_E2E_SKIP_RUNTIME=1 playwright test tests/e2e/config-contract.spec.ts",
+    "test:e2e:headed": "playwright test --headed",
+    "playwright:install:chromium": "playwright install chromium",
+    "frontend:bundle:fixture": "node ./scripts/frontend-bundle-audit.mjs --scope fixture --manifest ./tests/fixtures/frontend-evidence/bundle/manifest.fixture.json --out ./tests/_artifacts/frontend-evidence/bundle-fixture.json",
+    "frontend:bundle:product": "node ./scripts/frontend-bundle-audit.mjs --scope product --manifest ./config/bundle.product.json --out ./tests/_artifacts/frontend-evidence/bundle-product.json",
+    "frontend:impeccable:fixture": "node ./scripts/frontend-impeccable-evidence.mjs fixture --detector-executable node --detector-prefix ./tests/fixtures/frontend-evidence/impeccable/fake-detector.mjs --detector-version fixture-detector@1.0.0 --paths ./tests/fixtures/frontend-evidence/impeccable/subject.html --dossier ./tests/fixtures/frontend-evidence/impeccable/polish-dossier.fixture.json --audit-out ./tests/_artifacts/frontend-evidence/impeccable-audit-fixture.json --polish-out ./tests/_artifacts/frontend-evidence/impeccable-polish-fixture.json",
+    "frontend:impeccable:audit": "node ./scripts/frontend-product-impeccable.mjs audit",
+    "frontend:impeccable:polish": "node ./scripts/frontend-product-impeccable.mjs polish",
+    "frontend:a11y:fixture": "node ./scripts/frontend-a11y-evidence.mjs --scope fixture --out ./tests/_artifacts/frontend-evidence/a11y-fixture.json",
+    "frontend:a11y:product": "node ./scripts/frontend-a11y-evidence.mjs --scope product --routes-manifest ./config/routes.product.json --base-url http://localhost:18080 --out ./tests/_artifacts/frontend-evidence/a11y-product.json",
+    "frontend:evidence:contracts": "node --test ./tests/tooling/frontend_bundle_audit_contract_test.mjs ./tests/tooling/frontend_impeccable_contract_test.mjs ./tests/tooling/frontend_accessibility_contract_test.mjs"
+  },
+  "dependencies": {
+    "htmx.org": "2.0.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "cross-env": "10.0.0",
+    "@tailwindcss/cli": "4.1.13",
+    "tailwindcss": "4.1.13"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_id": "nonzero",
+  "process_outcome": "nonzero_exit",
+  "exit_code": 17,
+  "stderr_policy": "omitted",
+  "expected_job_status": "failed",
+  "error_code": "SOLVER_PROCESS_FAILED",
+  "awards": []
+}

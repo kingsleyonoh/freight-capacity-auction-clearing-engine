@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "corpus_id": "solver_contract_v1",
+  "evidence_scope": "fixture_contract_only",
+  "cases": [
+    {
+      "case_id": "golden_single_round",
+      "input": "golden_single_round/input.json",
+      "expected": "golden_single_round/expected_decisions.json",
+      "stdout": "golden_single_round/minizinc.stdout.ndjson",
+      "normalized_output": "golden_single_round/normalized_output.json",
+      "allowed_uses": [
+        "unit_contract",
+        "replay",
+        "local_diagnostic"
+      ],
+      "production_clearing_success_eligible": false,
+      "evidence_scope": "fixture_contract_only"
+    },
+    {
+      "case_id": "infeasible_hard_constraints",
+      "input": "infeasible_hard_constraints/input.json",
+      "expected": "infeasible_hard_constraints/expected.json",
+      "stdout": "infeasible_hard_constraints/minizinc.stdout.ndjson",
+      "normalized_output": null,
+      "allowed_uses": [
+        "unit_contract",
+        "replay",
+        "local_diagnostic"
+      ],
+      "production_clearing_success_eligible": false,
+      "evidence_scope": "fixture_contract_only"
+    },
+    {
+      "case_id": "timeout",
+      "input": "timeout/case.json",
+      "expected": "timeout/case.json",
+      "stdout": null,
+      "normalized_output": null,
+      "allowed_uses": [
+        "unit_contract",
+        "replay",
+        "local_diagnostic"
+      ],
+      "production_clearing_success_eligible": false,
+      "evidence_scope": "fixture_contract_only"
+    },
+    {
+      "case_id": "malformed",
+      "input": "malformed/case.json",
+      "expected": "malformed/case.json",
+      "stdout": "malformed/minizinc.stdout.ndjson",
+      "normalized_output": null,
+      "allowed_uses": [
+        "unit_contract",
+        "replay",
+        "local_diagnostic"
+      ],
+      "production_clearing_success_eligible": false,
+      "evidence_scope": "fixture_contract_only"
+    },
+    {
+      "case_id": "nonzero",
+      "input": "nonzero/case.json",
+      "expected": "nonzero/case.json",
+      "stdout": null,
+      "normalized_output": null,
+      "allowed_uses": [
+        "unit_contract",
+        "replay",
+        "local_diagnostic"
+      ],
+      "production_clearing_success_eligible": false,
+      "evidence_scope": "fixture_contract_only"
+    }
+  ]
+}

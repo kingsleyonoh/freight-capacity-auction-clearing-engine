@@ -1,0 +1,5 @@
+# Keep opam lock regeneration and cross-shell verification byte-stable.
+*.opam text eol=lf
+*.opam.locked text eol=lf
+*.sh text eol=lf
+*.ps1 text eol=lf

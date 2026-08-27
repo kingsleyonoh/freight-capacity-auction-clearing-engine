@@ -1,0 +1,6 @@
+(library
+ (name fca_config)
+ (public_name freight_capacity_auction_clearing_engine.config)
+ (wrapped false)
+ (modules runtime_config feature_flags)
+ (libraries uri yojson))

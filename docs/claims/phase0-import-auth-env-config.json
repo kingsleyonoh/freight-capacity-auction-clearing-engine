@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "task": "Close API_KEY_PREFIX, MAX_CSV_UPLOAD_MB, DEFAULT_CURRENCY, BID_LATE_GRACE_SECONDS, and UNKNOWN_CARRIER_POLICY configuration evidence — PRD §§5.1/5.2/9/14",
+  "operator": "mesh:phase0-import-auth-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T08:43:00Z",
+  "completedAt": "2026-07-15T09:10:00Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-43-02-227Z-22xwt6/workers/phase0-import-auth-env-config-closure/gate-full-dune-runtest-rerun.txt",
+      "value": "Exact OCaml 5.2.0 full forced Dune test suite passed in a fresh disposable --init container."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-43-02-227Z-22xwt6/workers/phase0-import-auth-env-config-closure/gate-static-build-format-architecture.txt",
+      "value": "Exact OCaml 5.2.0 @check, @all, selected @fmt, and architecture gates passed."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-43-02-227Z-22xwt6/workers/phase0-import-auth-env-config-closure/config-rule-map-lines.txt",
+      "value": "Typed implementation, interface, tests, and safe env-name coverage are path-mapped."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T08-43-02-227Z-22xwt6/workers/phase0-import-auth-env-config-closure/diff-summary.txt",
+      "value": "Minimal bounds repair, regression coverage, and exactly-five progress closure; unrelated pre-existing work preserved."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-import-auth-env-config.json",
+    ".env.local",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/runtime_config.mli",
+    "tests/unit/config_test_support.ml",
+    "tests/unit/runtime_config_inventory_test.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "docs/progress.md"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_id": "timeout",
+  "process_outcome": "timeout",
+  "expected_job_status": "failed",
+  "error_code": "SOLVER_TIMEOUT",
+  "awards": []
+}

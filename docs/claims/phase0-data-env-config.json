@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "task": "Close ignored local env-file and DATABASE_URL, REDIS_URL, REPLAY_STORE_PATH, MIGRATIONS_AUTO_RUN configuration evidence — PRD §§9/14",
+  "operator": "mesh:phase0-data-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T07:44:50Z",
+  "completedAt": "2026-07-15T08:10:03Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T07-44-50-015Z-wfa0ok/workers/phase0-data-env-config-closure/gate-full-dune-runtest.txt",
+      "value": "Exact OCaml 5.2.0 full dune runtest --force --no-buffer passed."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T07-44-50-015Z-wfa0ok/workers/phase0-data-env-config-closure/gate-ignore-proof.txt",
+      "value": ".env.local is ignored, absent from tracked files, and absent from bounded untracked status."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T07-44-50-015Z-wfa0ok/workers/phase0-data-env-config-closure/config-rule-map-lines.txt",
+      "value": "Typed data configuration, abstract secret access, replay adapter validation, redaction, and tests are path-mapped."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T07-44-50-015Z-wfa0ok/workers/phase0-data-env-config-closure/diff-summary.txt",
+      "value": "Bounded implementation, env template, tests, claim, and exactly-five progress closure summary."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-data-env-config.json",
+    ".env.local",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/runtime_config.mli",
+    "tests/unit/runtime_config_inventory_test.ml",
+    "tests/unit/runtime_config_required_test.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "docs/progress.md"
+  ]
+}

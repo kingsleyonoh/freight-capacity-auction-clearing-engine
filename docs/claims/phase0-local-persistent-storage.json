@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "task": "Establish durable local PostgreSQL/Redis and host-backed DuckDB/solver storage — PRD §10",
+  "operator": "mesh:phase0-local-volumes-implementation",
+  "tool": "pi-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-16T13:40:00Z",
+  "completedAt": "2026-07-16T14:52:41Z",
+  "continuationFrom": [
+    "mesh-2026-07-16T13-40-02-943Z-eoobbv"
+  ],
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T13-40-02-943Z-eoobbv/workers/phase0-local-volumes-implementation/red-runtime-path-ocaml520.txt",
+      "value": "Exact OCaml 5.2.0 RED: the durable replay-path test failed because runtime configuration still defaulted to ./data/replay.duckdb."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T13-40-02-943Z-eoobbv/workers/phase0-local-volumes-implementation/red-tooling-powershell.txt",
+      "value": "PowerShell RED failed on the absent init/verify scripts, manifest schema, and storage guide."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T13-40-02-943Z-eoobbv/workers/phase0-local-volumes-implementation/red-persistence-powershell.txt",
+      "value": "Disposable persistence RED failed on the absent host initializer before implementation."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/green-tooling-powershell-current.txt",
+      "value": "PowerShell storage contract passed directory layout, unsafe-path, reparse-point, broad-write ACL, idempotency, and exact format-version checks."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/green-tooling-posix-current.txt",
+      "value": "POSIX storage contract passed 0700/0600, symlink, unsafe-path, idempotency, and version checks."
+    },
+    {
+      "type": "state",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/green-persistence-artifacts-current/persistence-result.json",
+      "value": "A unique cached-image-only Compose probe proved PostgreSQL/Redis restart and down-without--v persistence, byte-identical host DuckDB/solver artifacts, and exact label-verified cleanup."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/regression-dune-runtest-force-current.txt",
+      "value": "Exact OCaml 5.2.0 forced full Dune test suite passed."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/regression-dune-current.txt",
+      "value": "Exact OCaml 5.2.0 @check, @all, and architecture dependency checks exited 0."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/regression-integration-ocaml520.txt",
+      "value": "Canonical PostgreSQL 16, Redis 7, outbound HTTP, Dream, and lifecycle integration suites passed with disposable cleanup."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/regression-playwright-current.txt",
+      "value": "All six Playwright checks passed across desktop-1440, tablet-768, and mobile-390."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T14-40-18-903Z-3a5rop/workers/continue-phase0-local-volumes-implementation/regression-secret-scan-current.txt",
+      "value": "Tracked secret scan found zero matches across 87 files."
+    }
+  ],
+  "expectedFiles": [
+    ".agent/rules/CODEBASE_CONTEXT.md",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/solver-artifact-manifest-v1.schema.json",
+    "docs/claims/phase0-local-persistent-storage.json",
+    "docs/local-development-storage.md",
+    "docs/progress.md",
+    "scripts/local-storage.ps1",
+    "scripts/local-storage.sh",
+    "tests/integration/local_storage_persistence_test.ps1",
+    "tests/tooling/local_storage_contract_test.ps1",
+    "tests/tooling/local_storage_contract_test.sh",
+    "tests/unit/dune",
+    "tests/unit/local_storage_runtime_config_test.ml"
+  ]
+}

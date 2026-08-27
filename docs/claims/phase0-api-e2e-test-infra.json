@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "task": "Implement reusable Dream/API/real-HTTP/Playwright test infrastructure and canonical overlapping two-tenant fixture — PRD §3 and §5.1",
+  "operator": "mesh:phase0-api-e2e-test-infra-implementation",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T17:05:00Z",
+  "completedAt": "2026-07-15T18:11:00Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/final-fixture-unit.txt",
+      "value": "Canonical schema version, exactly-two cardinality, Unicode identity preservation, distinct IDs, overlapping public labels, normative schema, and recursive no-secret semantics passed in exact OCaml 5.2.0."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/final-dream.txt",
+      "value": "Three in-process Dream tests passed through the registered test-only catch/middleware/typed-field/router chain, including canonical errors and cross-tenant non-disclosure."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/final-lifecycle.txt",
+      "value": "Compiled fixture supervisor proved dual readiness, real HTTP, meaningful worker fixture reload/validation, JSON stop, Process_runner cancellation/reaping, control removal, and closed port."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/final-full-playwright.txt",
+      "value": "All six exact Chromium checks passed across desktop-1440, tablet-768, and mobile-390: project contracts plus two-tenant real-HTTP/worker/non-disclosure journeys."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/final-gate-status.txt",
+      "value": "Focused fixture/Dream/lifecycle, forced Dune, architecture, @check, @all, browserless config, and full Playwright gates all exited 0."
+    },
+    {
+      "type": "screenshot",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/artifacts/screenshots/pass-state-desktop-1440.png",
+      "value": "Deterministic pass-state JSON response rendered by exact Chromium at 1440x900; tablet and mobile companion screenshots are in the same directory."
+    },
+    {
+      "type": "file",
+      "path": "tests/fixtures/tenants.json",
+      "value": "Sole canonical two-tenant identity source consumed by both OCaml and TypeScript loaders."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T17-05-37-377Z-34ygtc/workers/phase0-api-e2e-test-infra-implementation/diff-summary.txt",
+      "value": "Infrastructure-only fixture, Dream, lifecycle, and Playwright implementation; no production bins/routes/auth/database state or product journey claim."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-api-e2e-test-infra.json",
+    "freight_capacity_auction_clearing_engine.opam",
+    "package.json",
+    "package-lock.json",
+    "playwright.config.ts",
+    "tests/fixtures/tenants.json",
+    "tests/fixtures/tenants.schema.json",
+    "tests/fixtures/tenant_fixture.ml",
+    "tests/fixtures/tenant_fixture.mli",
+    "tests/fixtures/dream_tenant_probe_app.ml",
+    "tests/fixtures/dream_tenant_probe_app.mli",
+    "tests/fixtures/lifecycle_protocol.ml",
+    "tests/fixtures/lifecycle_protocol.mli",
+    "tests/fixtures/dune",
+    "tests/fixtures/README.md",
+    "tests/unit/tenant_fixture_test.ml",
+    "tests/unit/event_outbox_test.ml",
+    "tests/unit/dune",
+    "tests/integration/dream_request_harness.ml",
+    "tests/integration/dream_request_harness.mli",
+    "tests/integration/dream_request_test.ml",
+    "tests/integration/e2e_lifecycle_test.ml",
+    "tests/integration/redis_queue_test.ml",
+    "tests/integration/sql_schema_test.ml",
+    "tests/integration/dune",
+    "tests/integration/main.ml",
+    "tests/e2e/fixtures/http_fixture_server.ml",
+    "tests/e2e/fixtures/worker_fixture.ml",
+    "tests/e2e/fixtures/runtime_supervisor.ml",
+    "tests/e2e/fixtures/dune",
+    "tests/e2e/global-setup.ts",
+    "tests/e2e/helpers/lifecycle.ts",
+    "tests/e2e/helpers/tenant-fixture.ts",
+    "tests/e2e/helpers/test.ts",
+    "tests/e2e/config-contract.spec.ts",
+    "tests/e2e/test-infrastructure.spec.ts",
+    ".agent/knowledge/modules/tests-test-infrastructure.md",
+    ".agent/knowledge/modules/_index.md",
+    "docs/progress.md"
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:model-input-v1",
+  "title": "model-input-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "tenant_id",
+    "auction",
+    "policy",
+    "loads",
+    "carriers",
+    "eligible_bids",
+    "excluded_bids"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "auction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "auction_id",
+        "mode",
+        "bid_close_at"
+      ],
+      "properties": {
+        "auction_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "single_round_spot"
+          ]
+        },
+        "bid_close_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "currency",
+        "service_risk_cap",
+        "service_risk_applies_to",
+        "max_carrier_share",
+        "tie_break"
+      ],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "service_risk_cap": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d{4}$"
+        },
+        "service_risk_applies_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "priority"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true
+        },
+        "max_carrier_share": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d{4}$"
+        },
+        "tie_break": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "total_score_micros",
+              "bid_amount",
+              "submitted_at",
+              "bid_id"
+            ]
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true
+        }
+      }
+    },
+    "loads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "load_id",
+          "equipment_type",
+          "capacity_units",
+          "reserve_price",
+          "service_priority"
+        ],
+        "properties": {
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "equipment_type": {
+            "type": "string",
+            "enum": [
+              "REEFER",
+              "DRY_VAN"
+            ]
+          },
+          "capacity_units": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reserve_price": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d{2}$"
+          },
+          "service_priority": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "priority"
+            ]
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "carriers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "carrier_id",
+          "status",
+          "capacity_units",
+          "equipment_types",
+          "service_risk_micros"
+        ],
+        "properties": {
+          "carrier_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "const": "active"
+          },
+          "capacity_units": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "equipment_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "REEFER",
+                "DRY_VAN"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "service_risk_micros": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "eligible_bids": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bid_id",
+          "load_id",
+          "carrier_id",
+          "bid_amount",
+          "submitted_at",
+          "valid_until",
+          "total_score_micros"
+        ],
+        "properties": {
+          "bid_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carrier_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bid_amount": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d{2}$"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_score_micros": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "excluded_bids": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bid_id",
+          "load_id",
+          "carrier_id",
+          "bid_amount",
+          "submitted_at",
+          "exclusion_code"
+        ],
+        "properties": {
+          "bid_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carrier_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bid_amount": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d{2}$"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "exclusion_code": {
+            "type": "string",
+            "enum": [
+              "BID_LATE",
+              "EQUIPMENT_INCOMPATIBLE",
+              "CARRIER_SUSPENDED"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

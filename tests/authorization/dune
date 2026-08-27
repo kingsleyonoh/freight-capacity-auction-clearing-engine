@@ -1,0 +1,4 @@
+(test
+ (name permission_matrix_authorization_test)
+ (modules permission_matrix_authorization_test)
+ (libraries alcotest fca_auth fca_clearing))

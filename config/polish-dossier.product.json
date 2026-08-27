@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "scope": "product",
+  "routes": ["/"],
+  "auditArtifact": "./tests/_artifacts/frontend-evidence/impeccable-product.json",
+  "screenshots": [
+    {
+      "phase": "final",
+      "path": "./tests/_artifacts/frontend-evidence/product-control-desk-1440.png",
+      "rationale": "The final control-desk view shows the auction workbench, import warning state, and equivalent frontier table together at the primary desktop viewport."
+    }
+  ],
+  "checklist": {
+    "interactionStates": "Keyboard row detail, dialog Escape return, labelled import error, and reduced-motion behavior are exercised by Playwright.",
+    "typography": "System typography uses strong display scale for the headline and readable body copy for operational detail.",
+    "spacing": "The control desk uses consistent section gaps, padded cards, and responsive margins to keep operational density calm.",
+    "color": "Blue ink, pale paper, and orange action styling provide a restrained operational palette with explicit contrast evidence.",
+    "motion": "Reduced-motion preferences collapse transitions and animation duration to the evidence-approved bound.",
+    "copy": "Evidence-first copy explains sealed bids, explainable clearing, and safe replay in plain operational language.",
+    "tokenDrift": "The shell uses the declared blue, ink, paper, teal, orange, and line tokens consistently across controls and panels."
+  },
+  "findings": []
+}

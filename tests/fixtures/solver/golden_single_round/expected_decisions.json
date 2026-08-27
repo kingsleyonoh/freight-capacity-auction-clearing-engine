@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "case_id": "golden_single_round",
+  "evidence_scope": "fixture_contract_only",
+  "production_clearing_success_eligible": false,
+  "objective_micros": 500000,
+  "awards": [
+    {
+      "bid_id": "00000301-0000-4000-8000-000000000301",
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "carrier_id": "00000201-0000-4000-8000-000000000201",
+      "binding_constraints": [
+        "one_award_per_load",
+        "reserve_price"
+      ]
+    },
+    {
+      "bid_id": "00000304-0000-4000-8000-000000000304",
+      "load_id": "00000102-0000-4000-8000-000000000102",
+      "carrier_id": "00000202-0000-4000-8000-000000000202",
+      "binding_constraints": [
+        "service_risk_cap"
+      ]
+    },
+    {
+      "bid_id": "00000306-0000-4000-8000-000000000306",
+      "load_id": "00000103-0000-4000-8000-000000000103",
+      "carrier_id": "00000203-0000-4000-8000-000000000203",
+      "binding_constraints": [
+        "carrier_capacity",
+        "max_carrier_share"
+      ]
+    },
+    {
+      "bid_id": "00000307-0000-4000-8000-000000000307",
+      "load_id": "00000104-0000-4000-8000-000000000104",
+      "carrier_id": "00000204-0000-4000-8000-000000000204",
+      "binding_constraints": [
+        "deterministic_tiebreak"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "bid_id": "00000301-0000-4000-8000-000000000301",
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "decision_type": "awarded",
+      "binding_constraints": [
+        "one_award_per_load",
+        "reserve_price"
+      ],
+      "rejected_reason": null,
+      "score_micros": 100000
+    },
+    {
+      "bid_id": "00000302-0000-4000-8000-000000000302",
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "decision_type": "rejected",
+      "binding_constraints": [
+        "one_award_per_load"
+      ],
+      "rejected_reason": "HIGHER_TOTAL_SCORE",
+      "score_micros": 110000
+    },
+    {
+      "bid_id": "00000303-0000-4000-8000-000000000303",
+      "load_id": "00000102-0000-4000-8000-000000000102",
+      "decision_type": "rejected",
+      "binding_constraints": [
+        "service_risk_cap"
+      ],
+      "rejected_reason": "SERVICE_RISK_CAP",
+      "score_micros": 120000
+    },
+    {
+      "bid_id": "00000304-0000-4000-8000-000000000304",
+      "load_id": "00000102-0000-4000-8000-000000000102",
+      "decision_type": "awarded",
+      "binding_constraints": [
+        "service_risk_cap"
+      ],
+      "rejected_reason": null,
+      "score_micros": 125000
+    },
+    {
+      "bid_id": "00000305-0000-4000-8000-000000000305",
+      "load_id": "00000103-0000-4000-8000-000000000103",
+      "decision_type": "rejected",
+      "binding_constraints": [
+        "carrier_capacity",
+        "max_carrier_share"
+      ],
+      "rejected_reason": "CARRIER_CAPACITY_SHARE",
+      "score_micros": 130000
+    },
+    {
+      "bid_id": "00000306-0000-4000-8000-000000000306",
+      "load_id": "00000103-0000-4000-8000-000000000103",
+      "decision_type": "awarded",
+      "binding_constraints": [
+        "carrier_capacity",
+        "max_carrier_share"
+      ],
+      "rejected_reason": null,
+      "score_micros": 135000
+    },
+    {
+      "bid_id": "00000307-0000-4000-8000-000000000307",
+      "load_id": "00000104-0000-4000-8000-000000000104",
+      "decision_type": "awarded",
+      "binding_constraints": [
+        "deterministic_tiebreak"
+      ],
+      "rejected_reason": null,
+      "score_micros": 140000
+    },
+    {
+      "bid_id": "00000308-0000-4000-8000-000000000308",
+      "load_id": "00000104-0000-4000-8000-000000000104",
+      "decision_type": "rejected",
+      "binding_constraints": [
+        "deterministic_tiebreak"
+      ],
+      "rejected_reason": "DETERMINISTIC_TIEBREAK",
+      "score_micros": 140000
+    },
+    {
+      "bid_id": "00000309-0000-4000-8000-000000000309",
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "decision_type": "excluded",
+      "binding_constraints": [],
+      "rejected_reason": "BID_LATE",
+      "score_micros": null
+    },
+    {
+      "bid_id": "00000310-0000-4000-8000-000000000310",
+      "load_id": "00000102-0000-4000-8000-000000000102",
+      "decision_type": "excluded",
+      "binding_constraints": [],
+      "rejected_reason": "EQUIPMENT_INCOMPATIBLE",
+      "score_micros": null
+    },
+    {
+      "bid_id": "00000311-0000-4000-8000-000000000311",
+      "load_id": "00000103-0000-4000-8000-000000000103",
+      "decision_type": "excluded",
+      "binding_constraints": [],
+      "rejected_reason": "CARRIER_SUSPENDED",
+      "score_micros": null
+    }
+  ]
+}

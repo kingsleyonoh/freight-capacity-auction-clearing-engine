@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "routes": [
+    { "path": "/", "checks": ["visible-focus", "wcag-contrast", "reduced-motion"], "locators": { "focusTarget": ".hero a[href='/login']", "contrast": [{ "selector": "body", "minimum": 4.5 }, { "selector": ".large-copy", "minimum": 4.5 }], "motionTarget": ".hero" } },
+    { "path": "/login", "checks": ["visible-focus"], "locators": { "focusTarget": "#api-key" } },
+    { "path": "/dashboard", "checks": ["visible-focus"], "locators": { "focusTarget": ".toolbar a[href='/auctions']" } },
+    { "path": "/auctions", "checks": ["visible-focus"], "locators": { "focusTarget": ".button" } },
+    { "path": "/auctions/sample", "checks": ["keyboard-table-detail-parity"], "locators": { "rowAction": "#lane-open", "detailPanel": "#lane-detail", "expectedDetailText": "Lane A · Carrier North · 1200 USD" } },
+    { "path": "/auctions/sample/import", "checks": ["dialog-escape-focus-return", "import-steps-errors-labelled", "visible-focus", "reduced-motion"], "locators": { "dialogOpener": "#warning-opener", "dialog": "#import-warning", "importSteps": "#import-steps", "currentImportStep": "#import-steps [aria-current=step]", "importInput": "#equipment", "focusTarget": "#warning-opener", "motionTarget": ".motion-probe" } },
+    { "path": "/auctions/sample/clearing", "checks": ["semantic-status-not-color-only"], "locators": { "semanticStatus": ".risk-status" } },
+    { "path": "/auctions/sample/infeasible", "checks": ["semantic-status-not-color-only"], "locators": { "semanticStatus": ".risk-status" } },
+    { "path": "/approvals", "checks": ["visible-focus"], "locators": { "focusTarget": ".toolbar button:first-child" } },
+    { "path": "/replays", "checks": ["chart-summary-equivalent-table", "visible-focus", "wcag-contrast"], "locators": { "chartSummary": "#chart-summary", "chartTable": "#chart-data", "focusTarget": ".button", "contrast": [{ "selector": ".essential-graphic", "minimum": 3 }] } },
+    { "path": "/policies", "checks": ["visible-focus"], "locators": { "focusTarget": "form button:first-of-type" } },
+    { "path": "/policies/sample", "checks": ["visible-focus"], "locators": { "focusTarget": "form button:first-of-type" } },
+    { "path": "/carrier/bids", "checks": ["visible-focus"], "locators": { "focusTarget": "a.brand" } },
+    { "path": "/reports", "checks": ["visible-focus"], "locators": { "focusTarget": "article button" } },
+    { "path": "/settings/tenant", "checks": ["visible-focus"], "locators": { "focusTarget": "a[href='/settings/tenant']" } },
+    { "path": "/settings/users", "checks": ["visible-focus"], "locators": { "focusTarget": "a[href='/settings/users']" } },
+    { "path": "/settings/notifications", "checks": ["visible-focus"], "locators": { "focusTarget": "form button" } },
+    { "path": "/settings/integrations", "checks": ["visible-focus"], "locators": { "focusTarget": "tbody tr:first-child .row-action" } },
+    { "path": "/operator/jobs", "checks": ["visible-focus"], "locators": { "focusTarget": "a.brand" } }
+  ]
+}

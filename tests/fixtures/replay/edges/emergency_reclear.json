@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "tenant_id": "11111111-1111-4111-8111-111111111111",
+  "observed_at": "2025-03-04T12:00:00Z",
+  "evidence_scope": "fixture_contract_only",
+  "withdrawn_award_ref": "AWARD-WITHDRAWN-1",
+  "remaining_bids": [
+    "BID-REMAIN-1",
+    "BID-REMAIN-2"
+  ],
+  "silent_publication": false
+}

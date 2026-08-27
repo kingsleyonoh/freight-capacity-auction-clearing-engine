@@ -1,0 +1,30 @@
+(executable
+ (name http_fixture_server)
+ (modules http_fixture_server)
+ (libraries
+  dream
+  dream_test_support
+  lifecycle_test_support
+  tenant_test_support
+  lwt.unix
+  yojson
+  unix))
+
+(executable
+ (name worker_fixture)
+ (modules worker_fixture)
+ (libraries lifecycle_test_support tenant_test_support unix yojson))
+
+(executable
+ (name runtime_supervisor)
+ (modules runtime_supervisor)
+ (libraries
+  lifecycle_test_support
+  fca_process_runner
+  lwt.unix
+  cohttp
+  cohttp-lwt
+  cohttp-lwt-unix
+  uri
+  yojson
+  unix))

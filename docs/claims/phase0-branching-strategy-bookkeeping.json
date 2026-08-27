@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "task": "Associate typed repository-state evidence with the checked Git branching strategy and repair only Phase 0 close-out bookkeeping — PRD §9, §2b",
+  "operator": "mesh:phase0-closeout-bookkeeping-repair",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-16T18:52:42Z",
+  "completedAt": "2026-07-16T18:58:56Z",
+  "expectedFiles": [
+    "docs/claims/phase0-branching-strategy-bookkeeping.json",
+    "docs/claims/phase0-logging-errors-db.json",
+    "docs/claims/phase0-redis-http-context.json",
+    "docs/progress.md"
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/scoped-changes.diff",
+      "value": "Before/after diff contains only eight audit metadata lines and removal of the three obsolete EXAMPLE.md expectedFiles entries."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/repository-state.txt",
+      "value": "Local main and dev refs exist; HEAD and the checked-out branch are dev; the active claim was the only active collaboration claim before finalization."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/structural-red.txt",
+      "value": "Honest pre-repair RED found missing audit metadata, all three stale EXAMPLE.md paths, and the not-yet-final claim evidence."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/structural-prefinal-green.txt",
+      "value": "The focused structural validator passed all canonical bookkeeping content and blocker-preservation checks before the active claim was finalized."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/scoped-diff-check.txt",
+      "value": "Tracked and before/after scoped whitespace checks reported zero errors."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T18-51-16-236Z-fyeqhc/workers/phase0-closeout-bookkeeping-repair/secret-scan-active.txt",
+      "value": "Bounded redacted scan found no secret patterns in the four approved canonical files."
+    },
+    {
+      "type": "state",
+      "path": "docs/progress.md",
+      "value": "Both final Phase 0 AUDIT checkboxes and both blocked non-audit checkboxes remain unchecked."
+    }
+  ]
+}

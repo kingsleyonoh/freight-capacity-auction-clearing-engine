@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "task": "Implement Alcotest/OUnit queue conformance, isolated Redis harness proof, and production-runner-backed PostgreSQL 16 migration coverage — PRD §3",
+  "operator": "mesh:phase0-backend-test-infra-implementation",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T15:40:30Z",
+  "completedAt": "2026-07-15T16:21:00Z",
+  "updatedAt": "2026-07-16T19:42:00Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T15-40-01-876Z-o6gpbk/workers/phase0-backend-test-infra-implementation/full-forced-runtest-final.txt",
+      "value": "Exact OCaml 5.2.0 forced unit/architecture suite passed; OUnit2 queue conformance ran six substantive cases and all Alcotest suites passed."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T15-40-01-876Z-o6gpbk/workers/phase0-backend-test-infra-implementation/canonical-integration-final.txt",
+      "value": "Canonical disposable PostgreSQL 16 pool/schema, Redis core/ACL/failure/drain, and loopback HTTP integration passed with cleanup."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T15-40-01-876Z-o6gpbk/workers/phase0-backend-test-infra-implementation/green-redis-parallel-final.txt",
+      "value": "Two core Redis conformance harnesses ran concurrently with distinct run/container/network identities and zero remaining resources."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T15-40-01-876Z-o6gpbk/workers/phase0-backend-test-infra-implementation/static-build-final.txt",
+      "value": "Exact OCaml 5.2.0 @check, @all, and architecture gates passed."
+    },
+    {
+      "type": "file",
+      "path": "tests/integration/sql_schema_test.ml",
+      "value": "The isolated schema harness supports generated-name safety, transaction-local search_path, commit/rollback, two tenant fixture IDs, concurrent isolation, and finalizer cleanup; production migration coverage now invokes the exact catalog/runner."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/green-postgres16-final.txt",
+      "value": "Cached PostgreSQL 16 ran the exact production catalog/runner and compiled migrate CLI through fresh apply, ledger-only scope, idempotency, timezone, concurrency, search-path, parser, drift, rollback, tenant-leading fixture, and cleanup cases."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/npm-test-full.txt",
+      "value": "Canonical npm run test:full passed exact OCaml tests, PostgreSQL 16/Redis integration, and all 9 Playwright cases with owned-resource cleanup."
+    },
+    {
+      "type": "file",
+      "path": "migrations/000001_create_schema_migrations.sql",
+      "value": "The sole Phase 0 production migration creates only global operational schema_migrations metadata; no application relation or custom type is introduced."
+    },
+    {
+      "type": "state",
+      "path": "docs/freight-capacity-auction-clearing-engine_prd.md",
+      "value": "PRD §13 explicitly limits Phase 0 to the production migration mechanism and global metadata baseline while preserving every tenant/application/domain/integration migration for Phase 1/3."
+    },
+    {
+      "type": "file",
+      "path": "tests/fixtures/queue_conformance.ml",
+      "value": "Shared framework-neutral queue semantics run through OUnit2 memory and Alcotest real-Redis adapters."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T15-40-01-876Z-o6gpbk/workers/phase0-backend-test-infra-implementation/diff-summary.txt",
+      "value": "Bounded tests-only support, harnesses, manifests, knowledge, claim, and exactly two completed progress items; no production source/migration files added."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-backend-test-infra.json",
+    "freight_capacity_auction_clearing_engine.opam",
+    "tests/fixtures/dune",
+    "tests/fixtures/queue_conformance.ml",
+    "tests/fixtures/queue_conformance.mli",
+    "tests/fixtures/in_memory_queue.ml",
+    "tests/fixtures/in_memory_queue.mli",
+    "tests/fixtures/README.md",
+    "tests/unit/dune",
+    "tests/unit/queue_memory_conformance_test.ml",
+    "tests/integration/dune",
+    "tests/integration/main.ml",
+    "tests/integration/redis_queue_conformance_adapter.ml",
+    "tests/integration/redis_queue_test.ml",
+    "tests/integration/run_redis.sh",
+    "tests/integration/run_redis_parallel.sh",
+    "tests/integration/postgres_schema_harness.ml",
+    "tests/integration/postgres_schema_harness.mli",
+    "tests/integration/sql_schema_test.ml",
+    "tests/integration/run_postgres16.sh",
+    "tests/integration/migration_runner_test.ml",
+    "tests/integration/run_migrate_cli.sh",
+    "tests/unit/migration_catalog_test.ml",
+    "migrations/000001_create_schema_migrations.sql",
+    "src/shared/migration_catalog.ml",
+    "src/shared/migration_catalog.mli",
+    "src/shared/migration_runner.ml",
+    "src/shared/migration_runner.mli",
+    "bin/migrate.ml",
+    ".agent/knowledge/foundation/db-postgres-pool.md",
+    ".agent/knowledge/foundation/queue-redis.md",
+    ".agent/knowledge/modules/src-shared.md",
+    "docs/progress.md"
+  ]
+}

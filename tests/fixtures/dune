@@ -1,0 +1,34 @@
+(executable
+ (name process_fixture)
+ (modules process_fixture)
+ (libraries unix yojson))
+
+(library
+ (name queue_test_support)
+ (wrapped false)
+ (modules queue_conformance in_memory_queue)
+ (libraries lwt.unix yojson))
+
+(library
+ (name tenant_test_support)
+ (wrapped false)
+ (modules tenant_fixture)
+ (libraries yojson))
+
+(library
+ (name fixture_contract_support)
+ (wrapped false)
+ (modules fixture_contract)
+ (libraries str yojson))
+
+(library
+ (name dream_test_support)
+ (wrapped false)
+ (modules dream_tenant_probe_app)
+ (libraries dream tenant_test_support fca_shared lwt.unix yojson))
+
+(library
+ (name lifecycle_test_support)
+ (wrapped false)
+ (modules lifecycle_protocol)
+ (libraries unix yojson))

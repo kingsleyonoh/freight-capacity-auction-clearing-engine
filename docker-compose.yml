@@ -1,0 +1,53 @@
+name: ${COMPOSE_PROJECT_NAME:-fca-dev}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: "on-failure:3"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-freight_auction_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-freight_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a non-empty local-only POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-0}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dev_backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7-alpine
+    restart: "on-failure:3"
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-0}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dev_backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  dev_backend:
+    name: ${COMPOSE_PROJECT_NAME:-fca-dev}-backend

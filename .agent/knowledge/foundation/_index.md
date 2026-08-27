@@ -6,7 +6,15 @@
 
 | File | Summary |
 |------|---------|
-| `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
+| `auth-tenant-context.md` | Immutable validated tenant and actor context with carrier-viewer scope invariants and no authorization side effects. |
+| `core-runtime-config.md` | Typed immutable startup configuration, secret redaction, and effective feature-flag contract. |
+| `db-postgres-pool.md` | One race-safe Caqti/Lwt pool with eager startup, normalized failures, in-flight draining, and terminal shutdown. |
+| `events-integration-outbox.md` | Secret-denying typed integration events and a caller-transaction outbox writer port. |
+| `http-error-envelope.md` | Validated stable codes and deterministic canonical `{error:{code,message,details}}` serialization. |
+| `http-outbound-client.md` | Bounded typed outbound HTTP with idempotency-aware retries, deadlines, response caps, and redacted errors. |
+| `observability-json-logging.md` | Typed allow-listed, filtered, single-line JSON application logging. |
+| `queue-redis.md` | One fail-closed Redis queue/lock/progress lifecycle with atomic admission and terminal shutdown. |
+| `solver-process-boundary.md` | Shell-free bounded child processes, safe capture, explicit solver health, and no silent backend fallback. |
 
 ## What belongs here
 
@@ -19,7 +27,7 @@ Primitives imported by 3+ modules or that establish a project-wide contract. Exa
 ## How to add a new foundation primitive
 
 1. Filename pattern: `category-slug.md` (e.g. `core-config-loading.md`, `db-pool-singleton.md`, `plugin-auth.md`).
-2. Use the What it establishes / Files / When to read shape from `EXAMPLE.md`.
+2. Use the What it establishes / Files / When to read / Contract / Cross-references shape used by existing siblings.
 3. Add one row to the `## Catalog` table above.
 
 ## Why directory-per-kind

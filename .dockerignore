@@ -45,7 +45,9 @@ data
 # Development-only material
 docs
 tests
-scripts
+scripts/*
+!scripts/generate_migration_catalog.ml
+!scripts/healthcheck.sh
 README.md
 LICENSE
 npm-debug.log*

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "task": "Close WORKFLOW_HIGH_VALUE_APPROVAL_ID, WORKFLOW_STATUS_POLLING_ENABLED, WEBHOOK_ENGINE_ENABLED, WEBHOOK_ENGINE_URL, and WEBHOOK_ENGINE_API_KEY configuration evidence \u2014 PRD \u00a7\u00a75.4/5.7/6.4/6.5/14",
+  "operator": "mesh:phase0-workflow-webhook-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T13:29:35+01:00",
+  "completedAt": "2026-07-15T14:08:35+01:00",
+  "expectedFiles": [
+    "docs/claims/phase0-workflow-webhook-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "tests/unit/feature_flags_test.ml",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    "docs/progress.md"
+  ]
+}

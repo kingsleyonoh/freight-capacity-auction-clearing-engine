@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "task": "Implement bounded process/solver boundary, typed DuckDB CLI replay store, and PostgreSQL 16/Redis Compose reachability \u2014 PRD \u00a73",
+  "operator": "mesh:phase0-solver-duckdb-compose-repair",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T04:38:32Z",
+  "reactivatedAt": "2026-07-15T06:18:11Z",
+  "reactivationReason": "Independent review found a POSIX TERM-resistant descendant escape, hostile solver metadata/config gaps, and missing host-published Compose protocol reachability; the claim was reactivated for RED-GREEN-regression repair.",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T06-13-49-338Z-zp3khs/workers/phase0-solver-duckdb-compose-repair/full-dune-runtest.txt",
+      "value": "Exact OCaml 5.2.0 full dune runtest --force --no-buffer passed after the process-tree and solver metadata/config repairs."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T06-13-49-338Z-zp3khs/workers/phase0-solver-duckdb-compose-repair/canonical-integration.txt",
+      "value": "Canonical PostgreSQL 16, Redis 7, and loopback HTTP integration passed with bounded cleanup."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T06-13-49-338Z-zp3khs/workers/phase0-solver-duckdb-compose-repair/green-compose-host-lifecycle.txt",
+      "value": "Cached-only Compose lifecycle resolved 127.0.0.1 published ports and passed host-side SELECT 1 and RESP PING with disposable overrides."
+    },
+    {
+      "type": "file",
+      "path": "src/shared/process_runner.ml",
+      "value": "POSIX cleanup now escalates/verifies the process group independently of leader exit; Windows remains typed unproven."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T06-13-49-338Z-zp3khs/workers/phase0-solver-duckdb-compose-repair/diff-summary.txt",
+      "value": "Review-blocker-only source/test/harness/knowledge/tracking repair summary; selected formatting clean and unrelated full-tree drift retained."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-solver-duckdb-compose.json",
+    "tests/fixtures/process_fixture.ml",
+    "tests/fixtures/dune",
+    "tests/unit/process_runner_test.ml",
+    "tests/unit/solver_backend_test.ml",
+    "tests/unit/duckdb_store_test.ml",
+    "tests/unit/dune",
+    "tests/integration/compose_services_test.ps1",
+    "tests/architecture/dependency_hierarchy_test.ml",
+    "src/shared/process_runner.ml",
+    "src/shared/process_runner.mli",
+    "src/shared/dune",
+    "src/solver/solver_backend.ml",
+    "src/solver/solver_backend.mli",
+    "src/solver/dune",
+    "src/replays/duckdb_store.ml",
+    "src/replays/duckdb_store.mli",
+    "src/replays/dune",
+    "bin/solver_smoke.ml",
+    "bin/dune",
+    "docker-compose.yml",
+    ".agent/knowledge/foundation/solver-process-boundary.md",
+    ".agent/knowledge/foundation/_index.md",
+    ".agent/knowledge/modules/src-shared.md",
+    ".agent/knowledge/modules/src-solver.md",
+    ".agent/knowledge/modules/src-replays.md",
+    ".agent/knowledge/modules/_index.md",
+    ".agent/knowledge/gotchas/2026-07-15-lwt-leading-nul-argv.md",
+    ".agent/knowledge/gotchas/2026-07-15-duckdb-cli-init-and-safety.md",
+    ".agent/knowledge/gotchas/_index.md",
+    "freight_capacity_auction_clearing_engine.opam",
+    "docs/progress.md"
+  ],
+  "completedAt": "2026-07-15T07:07:15Z"
+}

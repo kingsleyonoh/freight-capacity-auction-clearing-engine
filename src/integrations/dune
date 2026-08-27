@@ -1,0 +1,5 @@
+(library
+ (name fca_integrations)
+ (wrapped false)
+ (modules integration_protocol)
+ (libraries yojson digestif))

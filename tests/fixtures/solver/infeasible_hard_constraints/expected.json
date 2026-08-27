@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "terminal_status": "UNSATISFIABLE",
+  "awards": [],
+  "unsat_set": [
+    "reserve_price",
+    "one_award_per_load"
+  ],
+  "ranked_relaxations": [
+    {
+      "rank": 1,
+      "constraint": "reserve_price",
+      "proposed_value": "1450.00"
+    },
+    {
+      "rank": 2,
+      "constraint": "one_award_per_load",
+      "proposed_value": "allow_unassigned"
+    }
+  ],
+  "auto_relaxed": false,
+  "published": false
+}

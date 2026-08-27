@@ -1,0 +1,4 @@
+(library
+ (name fca_ui)
+ (wrapped false)
+ (modules console_page))

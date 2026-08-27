@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "tenant_id": "11111111-1111-4111-8111-111111111111",
+  "observed_at": "2025-03-04T12:00:00Z",
+  "evidence_scope": "fixture_contract_only",
+  "proposed_awards": [
+    {
+      "award_ref": "AWARD-1"
+    }
+  ],
+  "events": [
+    {
+      "event_ref": "WITHDRAWAL-1",
+      "type": "award_withdrawn"
+    }
+  ],
+  "expected_transition": "emergency_reclear_eligible",
+  "live_state_mutated": false
+}

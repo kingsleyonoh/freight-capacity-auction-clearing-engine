@@ -1,0 +1,37 @@
+{
+  "protocol_version": 1,
+  "backend": "minizinc",
+  "solver_version": "recorded-contract-v1",
+  "terminal_status": "SATISFIED",
+  "objective_micros": 500000,
+  "assignments": [
+    {
+      "load_id": "00000101-0000-4000-8000-000000000101",
+      "bid_id": "00000301-0000-4000-8000-000000000301"
+    },
+    {
+      "load_id": "00000102-0000-4000-8000-000000000102",
+      "bid_id": "00000304-0000-4000-8000-000000000304"
+    },
+    {
+      "load_id": "00000103-0000-4000-8000-000000000103",
+      "bid_id": "00000306-0000-4000-8000-000000000306"
+    },
+    {
+      "load_id": "00000104-0000-4000-8000-000000000104",
+      "bid_id": "00000307-0000-4000-8000-000000000307"
+    }
+  ],
+  "binding_constraints": [
+    "carrier_capacity",
+    "deterministic_tiebreak",
+    "max_carrier_share",
+    "one_award_per_load",
+    "reserve_price",
+    "service_risk_cap"
+  ],
+  "statistics": {
+    "solutions": 1,
+    "nodes_bucket": "under_100"
+  }
+}

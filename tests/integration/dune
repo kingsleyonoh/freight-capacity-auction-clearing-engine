@@ -1,0 +1,45 @@
+(executable
+ (name main)
+ (modules
+  main
+  db_pool_test
+  postgres_schema_harness
+  sql_schema_test
+  migration_runner_test
+  redis_queue_test
+  redis_queue_conformance_adapter
+  http_client_test
+  dream_request_harness
+  dream_request_test
+  e2e_lifecycle_test)
+ (libraries
+  alcotest
+  queue_test_support
+  tenant_test_support
+  dream_test_support
+  lifecycle_test_support
+  fca_process_runner
+  fca_shared
+  lwt.unix
+  uri
+  yojson
+  cohttp
+  cohttp-lwt
+  cohttp-lwt-unix
+  conduit-lwt-unix
+  caqti
+  caqti-lwt.unix
+  caqti-driver-postgresql
+  dream)
+ (link_deps
+  ../fixtures/tenants.json
+  %{exe:../../bin/migrate.exe}
+  run_migrate_cli.sh
+  %{exe:../e2e/fixtures/http_fixture_server.exe}
+  %{exe:../e2e/fixtures/worker_fixture.exe}
+  %{exe:../e2e/fixtures/runtime_supervisor.exe}))
+
+(executable
+ (name replay_parquet_fixture_test)
+ (modules replay_parquet_fixture_test)
+ (libraries alcotest unix))

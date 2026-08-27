@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "task": "Establish PRODUCT.md, DESIGN.md, and privacy-matrix baselines — PRD §5b",
+  "operator": "mesh:phase0-product-design-privacy-implementation",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-16T18:11:20+01:00",
+  "expectedFiles": [
+    "PRODUCT.md",
+    "DESIGN.md",
+    "docs/frontend/privacy-matrix.md",
+    "tests/tooling/frontend_product_design_contract_test.mjs",
+    "docs/claims/phase0-product-design-privacy.json",
+    "docs/progress.md"
+  ],
+  "completedAt": "2026-07-16T18:20:00+01:00",
+  "evidence": [
+    {
+      "type": "file",
+      "path": "PRODUCT.md",
+      "value": "Focused contract validation passed the existing project-specific freight buyer roles, defensible-clearing positioning, trust/privacy posture, and explicit anti-references without manufacturing a documentation change."
+    },
+    {
+      "type": "file",
+      "path": "DESIGN.md",
+      "value": "Manifest Control Desk baseline now specifies literal typography, color tokens, deterministic chart colors, density, canonical states, responsive behavior, accessibility/focus/motion, exact role labels, and route-only dynamic imports."
+    },
+    {
+      "type": "file",
+      "path": "docs/frontend/privacy-matrix.md",
+      "value": "Baseline defines Allowed/Generalized/Hidden outcomes for four roles and UI, DOM, API/HTMX, export/report, logs, and analytics, with sealed-bid, reliability, frozen-export, and carrier-redaction rules plus future P1/P2 owners."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/red-frontend-product-design-contract.txt",
+      "value": "Honest RED: PRODUCT passed unchanged; DESIGN and cross-document tests failed for genuine missing literal color/role contract, and privacy matrix failed because the file was absent."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/green-frontend-product-design-contract.txt",
+      "value": "Focused Node contract suite passed all 4 tests with zero failures."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-e2e-config.txt",
+      "value": "Playwright configuration-only regression passed desktop 1440px, tablet 768px, and mobile 390px projects; this is not product UI journey evidence."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-dune-check.txt",
+      "value": "Canonical dune build @check passed in the cached exact OCaml 5.2.0 environment."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-dune-all.txt",
+      "value": "Canonical dune build @all passed in the cached exact OCaml 5.2.0 environment."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-canonical-full-test.txt",
+      "value": "Canonical npm run test:full passed unit, real PostgreSQL 16/Redis 7 integration, Dream/HTTP/lifecycle coverage, and all 6 Playwright infrastructure/config tests with clean owned-resource status."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-diff-check.txt",
+      "value": "Bounded git diff --check passed for the six claimed files."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-09-07-666Z-hi17ip/workers/phase0-product-design-privacy-implementation/regression-secret-scan.txt",
+      "value": "Bounded secret scan found zero credential/private-key/token/credential-URL patterns in the claimed files."
+    }
+  ]
+}

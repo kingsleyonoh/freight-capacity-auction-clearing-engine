@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "artifactRoot": "tests/_artifacts/frontend-evidence",
+  "bundle": {
+    "maxInitialGzipBytes": 204800,
+    "heavyKinds": ["chart", "frontier"],
+    "allowedDynamicRoutePatterns": [
+      "^/replays(?:/|$)",
+      "^/auctions/[^/]+/clearing(?:/|$)"
+    ]
+  },
+  "impeccable": {
+    "blockingSeverities": ["P0", "P1"],
+    "requiredPolishChecklist": [
+      "interactionStates",
+      "typography",
+      "spacing",
+      "color",
+      "motion",
+      "copy",
+      "tokenDrift"
+    ]
+  },
+  "accessibility": {
+    "requiredChecks": [
+      "keyboard-table-detail-parity",
+      "dialog-escape-focus-return",
+      "import-steps-errors-labelled",
+      "chart-summary-equivalent-table",
+      "visible-focus",
+      "wcag-contrast",
+      "semantic-status-not-color-only",
+      "reduced-motion"
+    ],
+    "minimumContrast": {
+      "body": 4.5,
+      "largeText": 3,
+      "essentialGraphics": 3
+    }
+  }
+}

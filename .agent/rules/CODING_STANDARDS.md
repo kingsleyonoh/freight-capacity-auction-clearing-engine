@@ -24,7 +24,7 @@ imports → shared, auth, tenants, carriers, policies
 auctions → shared, auth, tenants, carriers, policies, imports
 solver → shared
 clearing → shared, auctions, carriers, policies, solver
-approvals → shared, auth, clearing, integrations
+approvals → shared, auth, clearing
 replays → shared, auctions, policies, clearing, solver
 reports → shared, tenants, auctions, clearing, approvals
 notifications → shared, auth, tenants, auctions, approvals, reports
@@ -32,6 +32,8 @@ integrations → shared, auth, auctions, approvals, notifications
 jobs → shared plus owning domain services
 ui → shared, auth, and domain service interfaces
 ```
+
+`approvals` owns an integration-neutral workflow-approval port and depends only on `shared`, `auth`, and `clearing`. `integrations` depends downward on `approvals`, implements the port, and the executable composition layer injects that implementation; `approvals` never imports `integrations`.
 
 - Domain modules never create their own PostgreSQL pool, Redis connection policy, outbound retry policy, or tenant resolver.
 - Dream handlers are thin: resolve request/tenant, validate input, call one service boundary, render HTML/HTMX or serialize JSON.

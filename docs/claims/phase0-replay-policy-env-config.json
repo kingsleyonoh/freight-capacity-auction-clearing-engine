@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "task": "Close ORTOOLS_WORKER_PATH, REPLAY_MAX_ROWS, REPLAY_ALLOW_EXTERNAL_EVENTS, DEFAULT_SERVICE_RISK_CAP, and DEFAULT_MAX_CARRIER_SHARE with integrated solver/replay/policy configuration evidence — PRD §§5.3/5.5/6.2/9/14",
+  "operator": "mesh:phase0-replay-policy-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T11:48:00+01:00",
+  "completedAt": "2026-07-15T12:24:00+01:00",
+  "expectedFiles": [
+    "docs/claims/phase0-replay-policy-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/feature_flags.ml",
+    "config/feature_flags.mli",
+    "src/solver/solver_backend.ml",
+    "src/replays/duckdb_store.ml",
+    "src/replays/duckdb_store.mli",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "tests/unit/feature_flags_test.ml",
+    "tests/unit/solver_backend_test.ml",
+    "tests/unit/duckdb_store_test.ml",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    ".agent/knowledge/modules/src-replays.md",
+    "docs/progress.md"
+  ]
+}

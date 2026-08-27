@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:recorded-integration-v1",
+  "title": "recorded-integration-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "adapter",
+    "case_id",
+    "direction",
+    "evidence_scope",
+    "network_policy",
+    "tenant_scope",
+    "request",
+    "transport",
+    "response",
+    "expected"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "adapter": {
+      "type": "string",
+      "enum": [
+        "notification_hub",
+        "workflow_engine",
+        "webhook_engine"
+      ]
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "outbound",
+        "inbound"
+      ]
+    },
+    "evidence_scope": {
+      "type": "string",
+      "const": "recorded_contract_only"
+    },
+    "network_policy": {
+      "type": "string",
+      "const": "no_live_call"
+    },
+    "tenant_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenant_fixture",
+        "resolution_stage",
+        "tenant_id"
+      ],
+      "properties": {
+        "tenant_fixture": {
+          "type": "string",
+          "const": "../tenants.json"
+        },
+        "resolution_stage": {
+          "type": "string",
+          "enum": [
+            "tenant_known",
+            "pre_tenant_invalid_signature",
+            "pre_tenant_unknown_source"
+          ]
+        },
+        "tenant_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "route_template",
+        "header_names",
+        "redacted_headers",
+        "body"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST"
+          ]
+        },
+        "route_template": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "header_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "redacted_headers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string",
+                "const": "[REDACTED_FIXTURE]"
+              }
+            }
+          }
+        },
+        "body": {
+          "type": "object"
+        }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "attempt",
+        "elapsed_ms_bucket"
+      ],
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "response",
+            "timeout"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "elapsed_ms_bucket": {
+          "type": "string",
+          "enum": [
+            "under_5000"
+          ]
+        }
+      }
+    },
+    "response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "header_names",
+            "redacted_headers",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "header_names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "redacted_headers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "value"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string",
+                    "const": "[REDACTED_FIXTURE]"
+                  }
+                }
+              }
+            },
+            "body": {
+              "type": "object"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_status",
+        "outbox_status",
+        "retry_scheduled",
+        "duplicate_of",
+        "canonical_state_mutated",
+        "audit_code",
+        "response_status"
+      ],
+      "properties": {
+        "adapter_status": {
+          "type": "string"
+        },
+        "outbox_status": {
+          "type": "string"
+        },
+        "retry_scheduled": {
+          "type": "boolean"
+        },
+        "duplicate_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "canonical_state_mutated": {
+          "type": "boolean",
+          "const": false
+        },
+        "audit_code": {
+          "type": "string"
+        },
+        "response_status": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

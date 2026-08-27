@@ -1,10 +1,10 @@
 # Freight Capacity Auction Clearing Engine — Schema Context
 
-> Companion to `CODEBASE_CONTEXT.md`. Planned schema from PRD §4; migrations are not implemented yet. Last updated: 2026-07-09.
+> Companion to `CODEBASE_CONTEXT.md`. Planned application schema from PRD §4. Phase 0 implements only the global `schema_migrations` operational ledger; tenant/application/domain/integration migrations remain planned. Last updated: 2026-07-16.
 
 ## Global Data Contract
 
-PostgreSQL 16 is canonical OLTP. All data-bearing rows have `tenant_id UUID NOT NULL`; tenant queries and useful composite indexes lead with `tenant_id`. IDs are UUIDs. Mutable tables have `created_at` and `updated_at`. Caqti requests are parameterized. Statuses/checks/indexes are implemented exactly from PRD §4.
+PostgreSQL 16 is canonical OLTP. The implemented `schema_migrations` table is global non-data-bearing operational metadata and the sole Phase 0 exception to tenant-leading rules. All application data-bearing rows have `tenant_id UUID NOT NULL`; tenant queries and useful composite indexes lead with `tenant_id`. IDs are UUIDs. Mutable application tables have `created_at` and `updated_at`. Caqti requests are parameterized. Planned statuses/checks/indexes remain governed by PRD §4.
 
 DuckDB stores replay datasets/aggregates only. Redis stores queue/cache/lock state only. Neither authorizes or replaces canonical PostgreSQL auction state.
 

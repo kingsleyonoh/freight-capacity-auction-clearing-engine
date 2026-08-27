@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://freight-auction.example.test/schemas/test-tenants-v1.json",
+  "title": "Canonical two-tenant authorization fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tenants"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "tenants": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/tenant" }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "nonblank": { "type": "string", "minLength": 1 },
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line1", "city", "region", "postal_code", "country"],
+      "properties": {
+        "line1": { "$ref": "#/$defs/nonblank" },
+        "city": { "$ref": "#/$defs/nonblank" },
+        "region": { "$ref": "#/$defs/nonblank" },
+        "postal_code": { "$ref": "#/$defs/nonblank" },
+        "country": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jurisdiction", "broker_registration", "tax_id"],
+      "properties": {
+        "jurisdiction": { "$ref": "#/$defs/nonblank" },
+        "broker_registration": { "$ref": "#/$defs/nonblank" },
+        "tax_id": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["email", "phone", "support_url", "operations_contact"],
+      "properties": {
+        "email": { "type": "string", "pattern": "^[^@]+@example\\.test$" },
+        "phone": { "$ref": "#/$defs/nonblank" },
+        "support_url": { "type": "string", "pattern": "^https://[^/]+\\.example\\.test/" },
+        "operations_contact": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "carrier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "public_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "public_name": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "public_ref", "public_label"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "public_ref": { "$ref": "#/$defs/nonblank" },
+        "public_label": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "auction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "public_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "public_name": { "$ref": "#/$defs/nonblank" }
+      }
+    },
+    "overlap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["carrier", "load", "auction"],
+      "properties": {
+        "carrier": { "$ref": "#/$defs/carrier" },
+        "load": { "$ref": "#/$defs/load" },
+        "auction": { "$ref": "#/$defs/auction" }
+      }
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "legal_name", "full_legal_name", "display_name", "address", "registration", "contact", "wordmark", "brand_color", "timezone", "default_currency", "operator_license", "overlap"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "$ref": "#/$defs/nonblank" },
+        "legal_name": { "$ref": "#/$defs/nonblank" },
+        "full_legal_name": { "$ref": "#/$defs/nonblank" },
+        "display_name": { "$ref": "#/$defs/nonblank" },
+        "address": { "$ref": "#/$defs/address" },
+        "registration": { "$ref": "#/$defs/registration" },
+        "contact": { "$ref": "#/$defs/contact" },
+        "wordmark": { "$ref": "#/$defs/nonblank" },
+        "brand_color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "timezone": { "$ref": "#/$defs/nonblank" },
+        "default_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "operator_license": { "$ref": "#/$defs/nonblank" },
+        "overlap": { "$ref": "#/$defs/overlap" }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "Close WEBHOOK_ENGINE_RECEIVER_SECRET, INTEGRATION_HTTP_TIMEOUT_SECONDS, INTEGRATION_HEALTH_CHECK_ENABLED, SENTRY_DSN, and OTEL_EXPORTER_OTLP_ENDPOINT configuration evidence — PRD §§5.7/6.5/10b/14",
+  "operator": "mesh:continue-phase0-webhook-observability-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T14:16:00+01:00",
+  "completedAt": "2026-07-15T15:38:10+01:00",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/full-disposable-ocaml-5.2.0.txt",
+      "value": "Fresh disposable exact OCaml 5.2.0 forced full Dune suite passed: 85 tests across 13 executables, including all five focused configuration contracts."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/focused-disposable-ocaml-5.2.0.txt",
+      "value": "Exact OCaml 5.2.0 focused executable passed 5/5: receiver secret, timeout policy budget, health flag, sensitive Sentry DSN, and OTLP endpoint."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/check-disposable-ocaml-5.2.0.txt",
+      "value": "Exact OCaml 5.2.0 dune build @check passed."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/all-disposable-ocaml-5.2.0.txt",
+      "value": "Exact OCaml 5.2.0 dune build @all passed."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/selected-format-disposable-ocaml-5.2.0.txt",
+      "value": "Exact OCaml 5.2.0 disposable selected ocamlformat 0.29.0 checks passed for the runtime config interface/implementation and focused test."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/architecture-disposable-ocaml-5.2.0.txt",
+      "value": "Dependency hierarchy executable passed 2/2 under exact OCaml 5.2.0."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/redacted-sensitive-scan.txt",
+      "value": "Count-only scan found zero actionable private-key, JWT, credentialed URI, or long secret assignments; the sole raw long-secret shape is an allowlisted synthetic test marker whose value is suppressed. All three sensitive example values are blank."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/progress-five-check.txt",
+      "value": "Exactly the five selected progress items are checked; METRICS_ENABLED, POSTHOG_KEY, and POSTHOG_HOST remain unchecked."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-20-03-613Z-pcux4i/workers/continue-phase0-webhook-observability-env-config-closure/diff-summary.txt",
+      "value": "Recovered the interrupted focused evidence/config closure, applied only a test-format repair during continuation, and added no webhook/observability adapter, external call, export, or readiness behavior."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-webhook-observability-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "config/runtime_config.mli",
+    "tests/unit/runtime_config_webhook_observability_test.ml",
+    "tests/unit/dune",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    "docs/progress.md"
+  ]
+}

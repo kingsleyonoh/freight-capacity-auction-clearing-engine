@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "scope": "fixture",
+  "auditArtifact": "tests/_artifacts/frontend-evidence/impeccable-audit-fixture.json",
+  "routes": ["fixture://impeccable-parser-contract"],
+  "screenshots": [
+    {
+      "phase": "final",
+      "path": "tests/fixtures/frontend-evidence/impeccable/final.fixture.svg",
+      "rationale": "Schema-only fixture path; no product screenshot or aesthetic claim."
+    }
+  ],
+  "checklist": {
+    "interactionStates": "fixture schema present",
+    "typography": "fixture schema present",
+    "spacing": "fixture schema present",
+    "color": "fixture schema present",
+    "motion": "fixture schema present",
+    "copy": "fixture schema present",
+    "tokenDrift": "none in parser fixture"
+  },
+  "findings": []
+}

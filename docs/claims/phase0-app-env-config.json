@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "task": "Close APP_ENV, APP_BASE_URL, APP_PORT, LOG_LEVEL, and SECRET_KEY_BASE environment configuration evidence — PRD §14",
+  "operator": "mesh:phase0-app-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T07:15:51.976723Z",
+  "completedAt": "2026-07-15T07:39:26.313419Z",
+  "expectedFiles": [
+    "docs/claims/phase0-app-env-config.json",
+    "config/runtime_config.ml",
+    "config/runtime_config.mli",
+    "tests/unit/runtime_config_inventory_test.ml",
+    "tests/unit/runtime_config_required_test.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    ".env.example",
+    "docs/progress.md"
+  ]
+}

@@ -6,12 +6,15 @@
 
 | File | Summary |
 |------|---------|
-| `EXAMPLE.md` | Template showing the expected shape — delete once a real gotcha exists. |
+| `2026-07-15-duckdb-cli-init-and-safety.md` | DuckDB CLI reads user init unless a controlled empty `-init` and fixed safety flags are supplied. |
+| `2026-07-15-lwt-leading-nul-argv.md` | Lwt 5.10.1 reserves leading NUL for a Windows inline command representation; reject all argv NUL. |
+| `2026-07-15-redis-0-8-stream-maxlen-token.md` | Redis 0.8 emits invalid `MAXCOUNT` for Stream trim encoders; isolate one private bounded XADD encoder. |
+| `2026-07-15-redis-lwt-separate-package.md` | Redis 0.8 Lwt support requires the separately pinned `redis-lwt` opam package. |
 
 ## How to add a new gotcha
 
 1. Filename pattern: `YYYY-MM-DD-short-slug.md` (date of discovery + kebab-case slug).
-2. Use the Symptom / Cause / Solution / Discovered in / Affects shape from `EXAMPLE.md` — matches `knowledge/gotchas-by-stack/` format so entries promote cleanly via `/harvest-gotchas`.
+2. Use the Symptom / Cause / Solution / Discovered in / Affects shape used by existing sibling files so entries promote cleanly via `/harvest-gotchas`.
 3. Add one row to the `## Catalog` table above.
 4. If the gotcha is cross-project (would bite other projects on the same stack), queue it for harvest.
 

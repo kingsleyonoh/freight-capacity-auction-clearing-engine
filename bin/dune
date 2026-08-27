@@ -1,0 +1,29 @@
+(executable
+ (name migrate)
+ (modules migrate)
+ (libraries fca_config fca_shared lwt.unix uri))
+
+(executable
+ (name solver_smoke)
+ (modules solver_smoke)
+ (libraries fca_process_runner fca_solver lwt.unix yojson))
+
+(executable
+ (name replay_bench)
+ (modules replay_bench)
+ (libraries fca_process_runner fca_replays lwt.unix yojson unix))
+
+(executable
+ (name server)
+ (modules server)
+ (libraries dream fca_config fca_shared fca_auth fca_application fca_clearing fca_imports fca_reports fca_ui fca_integrations lwt.unix yojson uri))
+
+(executable
+ (name setup)
+ (modules setup)
+ (libraries fca_config fca_shared fca_application lwt.unix uri yojson))
+
+(executable
+ (name worker)
+ (modules worker)
+ (libraries fca_config fca_shared fca_application fca_clearing fca_solver fca_process_runner fca_replays fca_integrations lwt.unix uri yojson unix))

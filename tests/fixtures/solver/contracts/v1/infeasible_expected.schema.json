@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:infeasible-expected-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "terminal_status", "awards", "unsat_set",
+    "ranked_relaxations", "auto_relaxed", "published"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "terminal_status": { "type": "string", "const": "UNSATISFIABLE" },
+    "awards": { "type": "array", "maxItems": 0 },
+    "unsat_set": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "one_award_per_load", "carrier_capacity", "compatible_equipment",
+          "reserve_price", "service_risk_cap", "max_carrier_share"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "ranked_relaxations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "constraint", "proposed_value"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1 },
+          "constraint": {
+            "type": "string",
+            "enum": [
+              "one_award_per_load", "carrier_capacity", "compatible_equipment",
+              "reserve_price", "service_risk_cap", "max_carrier_share"
+            ]
+          },
+          "proposed_value": { "type": "string" }
+        }
+      }
+    },
+    "auto_relaxed": { "type": "boolean", "const": false },
+    "published": { "type": "boolean", "const": false }
+  }
+}

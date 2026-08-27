@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "adapter": "webhook_engine",
+  "case_id": "signature_shaped_invalid",
+  "direction": "inbound",
+  "evidence_scope": "recorded_contract_only",
+  "network_policy": "no_live_call",
+  "tenant_scope": {
+    "tenant_fixture": "../tenants.json",
+    "resolution_stage": "pre_tenant_invalid_signature",
+    "tenant_id": null
+  },
+  "request": {
+    "method": "POST",
+    "route_template": "/api/integrations/webhook-engine/bid-updates",
+    "header_names": [
+      "Content-Type",
+      "Authorization"
+    ],
+    "redacted_headers": [
+      {
+        "name": "Authorization",
+        "value": "[REDACTED_FIXTURE]"
+      }
+    ],
+    "body": {
+      "signature_descriptor": {
+        "algorithm": "sha256",
+        "encoding": "hex",
+        "length": 64,
+        "value": "[REDACTED_FIXTURE]"
+      },
+      "event_ref": "EVENT-RECORDED-3"
+    }
+  },
+  "transport": {
+    "outcome": "response",
+    "attempt": 1,
+    "elapsed_ms_bucket": "under_5000"
+  },
+  "response": {
+    "status": 401,
+    "header_names": [
+      "Content-Type"
+    ],
+    "redacted_headers": [],
+    "body": {
+      "code": "WEBHOOK_AUTH_INVALID"
+    }
+  },
+  "expected": {
+    "adapter_status": "rejected",
+    "outbox_status": "not_applicable",
+    "retry_scheduled": false,
+    "duplicate_of": null,
+    "canonical_state_mutated": false,
+    "audit_code": "WEBHOOK_AUTH_INVALID",
+    "response_status": 401
+  }
+}

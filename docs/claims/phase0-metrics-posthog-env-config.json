@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "task": "Close METRICS_ENABLED, POSTHOG_KEY, and POSTHOG_HOST configuration evidence without claiming metrics or analytics implementation — PRD §§10b/14",
+  "operator": "mesh:phase0-metrics-posthog-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T15:45:00+01:00",
+  "completedAt": "2026-07-15T16:08:00+01:00",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/red-focused.txt",
+      "value": "Exact disposable OCaml 5.2.0 focused RED failed only because production accepted an HTTP POSTHOG_HOST; the other four selected contract tests passed."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/green-focused.txt",
+      "value": "Exact disposable OCaml 5.2.0 focused GREEN passed all five metrics/PostHog configuration contracts."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/full-forced-final.txt",
+      "value": "Exact disposable OCaml 5.2.0 forced full Dune suite passed 92 tests across 16 executables."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/static-build-architecture-final.txt",
+      "value": "Exact disposable OCaml 5.2.0 @check, @all, and dependency architecture gates passed."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/selected-format.txt",
+      "value": "Exact OCaml 5.2.0 and ocamlformat 0.29.0 selected checks passed for runtime config and the focused test."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/command-manifest.txt",
+      "value": "Focused/full/static/build/format/architecture/npm/security gates and integration/Playwright N/A rationale are recorded."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/safe-env.json",
+      "value": "Example and ignored local env use a safe strict metrics boolean with blank PostHog key/host; local env is ignored and untracked."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/redacted-bounded-scan.txt",
+      "value": "Tracked and bounded redacted scans found no actionable credential, JWT, private-key, or credentialed-URI leak; synthetic test markers are explicitly dispositioned."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/no-implementation-claims-scan.txt",
+      "value": "Executable source contains no metrics endpoint, PostHog, or analytics implementation; this closure makes no readiness, external-call, analytics, or consent claim."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/progress-three-check.json",
+      "value": "Exactly the three selected final env items are checked and all 21 later Testing and Product Quality Infrastructure items remain unchecked."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T14-44-59-701Z-zd3gem/workers/phase0-metrics-posthog-env-config-closure/diff-summary.txt",
+      "value": "Minimal production-HTTPS invariant repair, focused evidence test, safe env/foundation documentation, and exactly-three progress closure; unrelated work preserved."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-metrics-posthog-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "tests/unit/runtime_config_metrics_posthog_test.ml",
+    "tests/unit/dune",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    "docs/progress.md"
+  ]
+}

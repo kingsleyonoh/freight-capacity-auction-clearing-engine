@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "task": "Implement the infrastructure-only Phase 0 production migration catalog, runner, global ledger baseline, PostgreSQL 16 tests, and compiled CLI — PRD §3/§13 clarification",
+  "operator": "mesh:phase0-production-migrations-implementation",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-16T19:12:00Z",
+  "completedAt": "2026-07-16T19:47:00Z",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/red-unit.txt",
+      "value": "Exact OCaml 5.2.0 unit RED failed on the absent Migration_catalog production module while established tests continued to execute."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/red-postgres16.txt",
+      "value": "Cached PostgreSQL 16.14 became ready, then the migration scenario failed because Migration_runner and bin/migrate.exe were absent; harness cleanup removed its container and network."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/green-postgres16-final.txt",
+      "value": "The exact production catalog/runner and compiled migrate CLI passed fresh ledger-only apply, read-only status/current, idempotency, TIMESTAMPTZ instant, same/cross-schema concurrency, search_path cleanup, parser/dialect, drift, rollback, tenant-leading fixture, and disposable-database cleanup cases on PostgreSQL 16."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/npm-test-full.txt",
+      "value": "Canonical npm run test:full passed unit, PostgreSQL/Redis/HTTP/Dream/lifecycle integration, and all 9 Playwright cases; owned full-test resources were absent afterward."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/npm-lint.txt",
+      "value": "Canonical npm run lint completed successfully using exact OCaml 5.2.0 fallback."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/npm-build.txt",
+      "value": "Canonical npm run build completed successfully, including bin/migrate.exe with compile-time embedded SQL."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/architecture-final.txt",
+      "value": "Architecture tests passed with migration infrastructure remaining in src/shared and composition in bin."
+    },
+    {
+      "type": "file",
+      "path": "migrations/000001_create_schema_migrations.sql",
+      "value": "The sole production migration creates only global schema_migrations with constrained version, filename, checksum_sha256, and applied_at columns."
+    },
+    {
+      "type": "state",
+      "path": "docs/freight-capacity-auction-clearing-engine_prd.md",
+      "value": "PRD §13 now explicitly assigns only the migration mechanism and non-data-bearing ledger baseline to Phase 0; every application/domain/integration migration remains Phase 1/3-owned."
+    },
+    {
+      "type": "state",
+      "path": ".pi/agents/runs/mesh-2026-07-16T19-08-18-745Z-hf444s/workers/phase0-production-migrations-implementation/secret-scan-changed.json",
+      "value": "Changed-path secret scan inspected 26 files with zero matches."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-production-migrations.json",
+    "docs/claims/phase0-backend-test-infra.json",
+    "docs/freight-capacity-auction-clearing-engine_prd.md",
+    "docs/progress.md",
+    "migrations/000001_create_schema_migrations.sql",
+    "src/shared/migration_catalog.ml",
+    "src/shared/migration_catalog.mli",
+    "src/shared/migration_runner.ml",
+    "src/shared/migration_runner.mli",
+    "src/shared/dune",
+    "scripts/generate_migration_catalog.ml",
+    "freight_capacity_auction_clearing_engine.opam",
+    "bin/migrate.ml",
+    "bin/dune",
+    "tests/unit/migration_catalog_test.ml",
+    "tests/unit/dune",
+    "tests/integration/postgres_schema_harness.ml",
+    "tests/integration/postgres_schema_harness.mli",
+    "tests/integration/migration_runner_test.ml",
+    "tests/integration/main.ml",
+    "tests/integration/dune",
+    "tests/integration/run_migrate_cli.sh",
+    ".agent/knowledge/foundation/db-postgres-pool.md",
+    ".agent/knowledge/modules/src-shared.md",
+    ".agent/knowledge/modules/tests-test-infrastructure.md",
+    ".agent/rules/CODEBASE_CONTEXT_SCHEMA.md"
+  ]
+}

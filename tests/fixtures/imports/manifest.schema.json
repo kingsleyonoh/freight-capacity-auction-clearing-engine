@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:import-manifest-v1",
+  "title": "import-manifest-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "corpus_id",
+    "evidence_scope",
+    "tenant_fixture",
+    "context_by_tenant",
+    "cases",
+    "schema_drift"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "corpus_id": {
+      "type": "string",
+      "const": "freight_import_bids_v1"
+    },
+    "evidence_scope": {
+      "type": "string",
+      "const": "fixture_contract_only"
+    },
+    "tenant_fixture": {
+      "type": "string",
+      "const": "../tenants.json"
+    },
+    "context_by_tenant": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tenant_id",
+          "auction_ref",
+          "bid_close_at",
+          "lane_ref",
+          "load_ref"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "auction_ref": {
+            "type": "string"
+          },
+          "bid_close_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lane_ref": {
+            "type": "string"
+          },
+          "load_ref": {
+            "type": "string"
+          }
+        }
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "file",
+          "row_number",
+          "expected"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string",
+            "const": "freight_import_bids_v1.csv"
+          },
+          "row_number": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "expected": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "normalized_payload",
+              "row_status",
+              "domain_status",
+              "error_codes",
+              "error_severity",
+              "quarantine_reason",
+              "commit_action",
+              "enters_solver"
+            ],
+            "properties": {
+              "normalized_payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "bid_amount",
+                  "currency",
+                  "capacity_units",
+                  "equipment_type"
+                ],
+                "properties": {
+                  "bid_amount": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d{2}$"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "USD"
+                    ]
+                  },
+                  "capacity_units": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "equipment_type": {
+                    "type": "string",
+                    "enum": [
+                      "REEFER",
+                      "DRY_VAN"
+                    ]
+                  }
+                }
+              },
+              "row_status": {
+                "type": "string",
+                "enum": [
+                  "valid",
+                  "skipped",
+                  "quarantined"
+                ]
+              },
+              "domain_status": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "eligible",
+                  "late",
+                  "duplicate",
+                  "rejected",
+                  null
+                ]
+              },
+              "error_codes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "error_severity": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "warning",
+                  "error",
+                  "fatal"
+                ]
+              },
+              "quarantine_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "commit_action": {
+                "type": "string",
+                "enum": [
+                  "insert_bid",
+                  "insert_noneligible_bid",
+                  "return_existing_target",
+                  "insert_rejected_bid",
+                  "no_bid"
+                ]
+              },
+              "enters_solver": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "schema_drift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "expected"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "const": "freight_import_bids_schema_drift_v2.csv"
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_status",
+            "row_count",
+            "valid_row_count",
+            "invalid_row_count",
+            "error_codes",
+            "missing_columns",
+            "unknown_columns",
+            "commit_allowed"
+          ],
+          "properties": {
+            "run_status": {
+              "type": "string",
+              "const": "quarantined"
+            },
+            "row_count": {
+              "type": "integer",
+              "const": 0
+            },
+            "valid_row_count": {
+              "type": "integer",
+              "const": 0
+            },
+            "invalid_row_count": {
+              "type": "integer",
+              "const": 0
+            },
+            "error_codes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_columns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unknown_columns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "commit_allowed": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

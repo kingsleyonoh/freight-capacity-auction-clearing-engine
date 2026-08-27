@@ -1,0 +1,5 @@
+(library
+ (name fca_auth)
+ (wrapped false)
+ (modules permission_matrix api_key jwt_session)
+ (libraries yojson digestif))

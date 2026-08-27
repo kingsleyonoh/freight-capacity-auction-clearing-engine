@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "controlled-fixture",
+  "assetRoot": "assets",
+  "routes": [
+    "/",
+    "/replays/run-fixture",
+    "/auctions/auction-fixture/clearing"
+  ],
+  "entries": ["app"],
+  "assets": {
+    "app": {
+      "file": "app.js",
+      "kind": "entry",
+      "imports": ["shell"],
+      "dynamicImports": ["chart", "frontier"]
+    },
+    "shell": {
+      "file": "shell.js",
+      "kind": "shared",
+      "imports": [],
+      "dynamicImports": []
+    },
+    "chart": {
+      "file": "chart.js",
+      "kind": "chart",
+      "imports": [],
+      "dynamicImports": [],
+      "routes": ["/auctions/auction-fixture/clearing"]
+    },
+    "frontier": {
+      "file": "frontier.js",
+      "kind": "frontier",
+      "imports": [],
+      "dynamicImports": [],
+      "routes": ["/replays/run-fixture"]
+    }
+  }
+}

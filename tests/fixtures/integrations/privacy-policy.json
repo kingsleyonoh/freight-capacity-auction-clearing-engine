@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "evidence_scope": "recorded_contract_only",
+  "network_policy": "no_live_call",
+  "forbidden_fields": [
+    "host",
+    "base_url",
+    "full_uri",
+    "cookies",
+    "authorization_values",
+    "api_key_values",
+    "receiver_secret_values",
+    "actual_signatures",
+    "raw_error_body"
+  ],
+  "required_redaction": "[REDACTED_FIXTURE]",
+  "signature_descriptor": {
+    "algorithm": "sha256",
+    "encoding": "hex",
+    "length": 64,
+    "value": "[REDACTED_FIXTURE]"
+  }
+}

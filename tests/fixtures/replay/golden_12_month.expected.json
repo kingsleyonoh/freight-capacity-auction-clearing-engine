@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "evidence_scope": "fixture_contract_only",
+  "row_count": 432,
+  "tenant_count": 2,
+  "month_count": 12,
+  "auction_count": 48,
+  "load_count": 144,
+  "bid_count": 432,
+  "rows_per_tenant_month": 18,
+  "baseline_outcome_claimed": false,
+  "production_policy_promotion_eligible": false
+}

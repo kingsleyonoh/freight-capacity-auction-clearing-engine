@@ -1,0 +1,59 @@
+(rule
+ (targets migration_catalog_data.ml)
+ (deps
+  ../../scripts/generate_migration_catalog.ml
+  ../../migrations/000001_create_schema_migrations.sql
+  ../../migrations/000002_create_auction_core.sql
+  ../../migrations/000003_create_replay_approval_notifications.sql
+  ../../migrations/000004_create_integrations.sql)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run
+    ocaml
+    %{dep:../../scripts/generate_migration_catalog.ml}
+    000001_create_schema_migrations.sql
+    %{dep:../../migrations/000001_create_schema_migrations.sql}
+    000002_create_auction_core.sql
+    %{dep:../../migrations/000002_create_auction_core.sql}
+    000003_create_replay_approval_notifications.sql
+    %{dep:../../migrations/000003_create_replay_approval_notifications.sql}
+    000004_create_integrations.sql
+    %{dep:../../migrations/000004_create_integrations.sql}))))
+
+(library
+ (name fca_process_runner)
+ (wrapped false)
+ (modules process_runner)
+ (libraries unix lwt.unix yojson))
+
+(library
+ (name fca_shared)
+ (wrapped false)
+ (modules
+  errors
+  logging
+  db_pool
+  migration_catalog_data
+  migration_catalog
+  migration_runner
+  redis_queue
+  http_client
+  tenant_context
+  event_outbox
+  metrics)
+ (libraries
+  logs
+  yojson
+  unix
+  lwt.unix
+  uri
+  redis
+  redis-lwt
+  cohttp
+  cohttp-lwt
+  cohttp-lwt-unix
+  angstrom
+  caqti
+  caqti-lwt.unix
+  caqti-driver-postgresql))

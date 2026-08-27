@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:replay-internal-manifest-v1",
+  "title": "replay-internal-manifest-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_scope",
+    "dataset",
+    "generator",
+    "duckdb_version",
+    "parquet_magic",
+    "row_count",
+    "row_group_count",
+    "ordered_columns",
+    "column_schema",
+    "monthly_counts",
+    "artifact_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "evidence_scope": {
+      "type": "string",
+      "const": "internal_fixture_evidence"
+    },
+    "dataset": {
+      "type": "string",
+      "const": "golden_12_month.parquet"
+    },
+    "generator": {
+      "type": "string",
+      "const": "tooling/generate_golden_12_month.sql"
+    },
+    "duckdb_version": {
+      "type": "string",
+      "const": "1.3.2"
+    },
+    "parquet_magic": {
+      "type": "string",
+      "const": "PAR1"
+    },
+    "row_count": {
+      "type": "integer",
+      "const": 432
+    },
+    "row_group_count": {
+      "type": "integer",
+      "const": 1
+    },
+    "ordered_columns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 37,
+      "maxItems": 37
+    },
+    "column_schema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "logical_type",
+          "nullable"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "logical_type": {
+            "type": "string"
+          },
+          "nullable": {
+            "type": "boolean",
+            "const": false
+          }
+        }
+      },
+      "minItems": 37,
+      "maxItems": 37
+    },
+    "monthly_counts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tenant_id",
+          "window_month",
+          "row_count"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "window_month": {
+            "type": "string",
+            "format": "date"
+          },
+          "row_count": {
+            "type": "integer",
+            "const": 18
+          }
+        }
+      },
+      "minItems": 24,
+      "maxItems": 24
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

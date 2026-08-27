@@ -1,0 +1,3 @@
+(test
+ (name dependency_hierarchy_test)
+ (libraries alcotest))

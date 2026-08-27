@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:expected-decisions-v1",
+  "title": "expected-decisions-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "evidence_scope",
+    "production_clearing_success_eligible",
+    "objective_micros",
+    "awards",
+    "decisions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "case_id": {
+      "type": "string",
+      "const": "golden_single_round"
+    },
+    "evidence_scope": {
+      "type": "string",
+      "const": "fixture_contract_only"
+    },
+    "production_clearing_success_eligible": {
+      "type": "boolean",
+      "const": false
+    },
+    "objective_micros": {
+      "type": "integer"
+    },
+    "awards": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bid_id",
+          "load_id",
+          "carrier_id",
+          "binding_constraints"
+        ],
+        "properties": {
+          "bid_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carrier_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binding_constraints": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "one_award_per_load",
+                "carrier_capacity",
+                "compatible_equipment",
+                "reserve_price",
+                "service_risk_cap",
+                "max_carrier_share",
+                "deterministic_tiebreak"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bid_id",
+          "load_id",
+          "decision_type",
+          "binding_constraints",
+          "rejected_reason",
+          "score_micros"
+        ],
+        "properties": {
+          "bid_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision_type": {
+            "type": "string",
+            "enum": [
+              "awarded",
+              "rejected",
+              "excluded"
+            ]
+          },
+          "binding_constraints": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "one_award_per_load",
+                "carrier_capacity",
+                "compatible_equipment",
+                "reserve_price",
+                "service_risk_cap",
+                "max_carrier_share",
+                "deterministic_tiebreak"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "rejected_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "HIGHER_TOTAL_SCORE",
+              "SERVICE_RISK_CAP",
+              "CARRIER_CAPACITY_SHARE",
+              "DETERMINISTIC_TIEBREAK",
+              "BID_LATE",
+              "EQUIPMENT_INCOMPATIBLE",
+              "CARRIER_SUSPENDED"
+            ]
+          },
+          "score_micros": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

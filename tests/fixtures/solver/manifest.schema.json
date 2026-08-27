@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:solver-manifest-v1",
+  "title": "solver-manifest-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "corpus_id",
+    "evidence_scope",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "corpus_id": {
+      "type": "string",
+      "const": "solver_contract_v1"
+    },
+    "evidence_scope": {
+      "type": "string",
+      "const": "fixture_contract_only"
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "allowed_uses",
+          "production_clearing_success_eligible",
+          "evidence_scope",
+          "input",
+          "expected",
+          "stdout",
+          "normalized_output"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string"
+          },
+          "allowed_uses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "unit_contract",
+                "replay",
+                "local_diagnostic"
+              ]
+            },
+            "minItems": 3,
+            "maxItems": 3,
+            "uniqueItems": true
+          },
+          "production_clearing_success_eligible": {
+            "type": "boolean",
+            "const": false
+          },
+          "evidence_scope": {
+            "type": "string",
+            "const": "fixture_contract_only"
+          },
+          "input": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "stdout": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "normalized_output": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "minItems": 5,
+      "maxItems": 5
+    }
+  }
+}

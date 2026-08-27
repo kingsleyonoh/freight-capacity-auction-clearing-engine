@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "task": "Establish bundle/dynamic-import, Impeccable, and accessibility evidence tooling baselines — PRD §5b; docs/progress.md lines 174–176",
+  "operator": "mesh:phase0-frontend-evidence-tooling-implementation",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-16T18:45:25+01:00",
+  "completedAt": "2026-07-16T19:07:58+01:00",
+  "expectedFiles": [
+    "config/frontend-evidence.json",
+    "scripts/frontend-evidence-common.mjs",
+    "scripts/frontend-bundle-audit.mjs",
+    "scripts/frontend-impeccable-evidence.mjs",
+    "scripts/frontend-a11y-evidence.mjs",
+    "tests/tooling/frontend_bundle_audit_contract_test.mjs",
+    "tests/tooling/frontend_impeccable_contract_test.mjs",
+    "tests/tooling/frontend_accessibility_contract_test.mjs",
+    "tests/fixtures/frontend-evidence/bundle/manifest.fixture.json",
+    "tests/fixtures/frontend-evidence/bundle/assets/app.js",
+    "tests/fixtures/frontend-evidence/bundle/assets/shell.js",
+    "tests/fixtures/frontend-evidence/bundle/assets/chart.js",
+    "tests/fixtures/frontend-evidence/bundle/assets/frontier.js",
+    "tests/fixtures/frontend-evidence/impeccable/fake-detector.mjs",
+    "tests/fixtures/frontend-evidence/impeccable/subject.html",
+    "tests/fixtures/frontend-evidence/impeccable/polish-dossier.fixture.json",
+    "tests/fixtures/frontend-evidence/impeccable/final.fixture.svg",
+    "tests/fixtures/frontend-evidence/a11y/fixture.html",
+    "tests/e2e/helpers/frontend-evidence.ts",
+    "tests/e2e/tooling/frontend-evidence-fixture.spec.ts",
+    "docs/frontend/evidence-tooling.md",
+    "package.json",
+    "docs/progress.md",
+    "docs/claims/phase0-frontend-evidence-tooling.json"
+  ],
+  "redEvidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/red-frontend-evidence-contracts.txt",
+      "value": "Honest pre-implementation RED: all 17 focused contracts failed because config, scripts, package commands, reusable helpers, fixture pages, and artifacts did not exist."
+    }
+  ],
+  "greenEvidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/green-frontend-evidence-contracts.txt",
+      "value": "Focused contract gate passed 17/17, including computed gzip 204800/204801 boundaries, static/dynamic closure, route restrictions, literal detector argv, fail-closed parser/dossier behavior, product guards, and executable accessibility contracts."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/fixture-bundle.txt",
+      "value": "Real controlled bundle fixture command exited 0; normalized artifact records scope fixture, productRoutesEvaluated false, computed initial gzip 220 bytes, static closure, and dynamic chart/frontier reachability."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/fixture-impeccable.txt",
+      "value": "Real controlled Impeccable fixture command exited 0 using the injected local detector and dossier validator; both normalized artifacts are fixture-scoped and do not evaluate product routes."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/fixture-a11y.txt",
+      "value": "Real controlled local-HTTP Playwright fixture passed the executable keyboard, dialog, import labels/errors, chart/table equivalence, focus, contrast, semantic-label, and reduced-motion checks."
+    },
+    {
+      "type": "file",
+      "path": "tests/_artifacts/frontend-evidence/bundle-fixture.json",
+      "value": "Fixture artifact explicitly records scope fixture and productRoutesEvaluated false."
+    },
+    {
+      "type": "file",
+      "path": "tests/_artifacts/frontend-evidence/impeccable-audit-fixture.json",
+      "value": "Injected detector fixture artifact explicitly records scope fixture, resolved fixture detector version, exact detector argv, and productRoutesEvaluated false."
+    },
+    {
+      "type": "file",
+      "path": "tests/_artifacts/frontend-evidence/impeccable-polish-fixture.json",
+      "value": "Dossier-validation fixture artifact explicitly records scope fixture and productRoutesEvaluated false; it makes no aesthetic product claim."
+    },
+    {
+      "type": "file",
+      "path": "tests/_artifacts/frontend-evidence/a11y-fixture.json",
+      "value": "Playwright fixture artifact explicitly records scope fixture, productRoutesEvaluated false, and eight passed helper-contract checks."
+    }
+  ],
+  "productNegativeEvidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/product-negative-probes.txt",
+      "value": "Four real product commands rejected an absent bundle manifest, fixture detector subject, fixture polish dossier, and empty accessibility route manifest with exit 2; every candidate output artifact remained absent."
+    }
+  ],
+  "regressionEvidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-previous-frontend-product-design.txt",
+      "value": "Accepted previous frontend product/design/privacy contract passed 4/4."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-playwright-config.txt",
+      "value": "Playwright configuration contract passed desktop 1440, tablet 768, and mobile 390 projects; configuration evidence only."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-scoped-diff-and-secret-scan.json",
+      "value": "All 24 claimed files existed; bounded git diff --check and trailing-whitespace scan passed; secret scan found zero findings."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-dune-check.txt",
+      "value": "Cached exact OCaml 5.2.0 wrapper ran dune build @check and exited 0."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-dune-all.txt",
+      "value": "Cached exact OCaml 5.2.0 wrapper ran dune build @all and exited 0."
+    },
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/regression-canonical-full-test.txt",
+      "value": "Canonical npm run test:full exited 0 across Dune unit, real PostgreSQL 16/Redis 7 integration, compiled real-HTTP lifecycle, and 9 Playwright tests including the fixture contract at all three configured viewports."
+    },
+    {
+      "type": "state",
+      "path": ".pi/agents/runs/mesh-2026-07-16T17-43-09-261Z-ezqgik/workers/phase0-frontend-evidence-tooling-implementation/preprogress-flag-scan.txt",
+      "value": "Pre-progress scan found no assignment or completion assertion for any forbidden frontend/privacy PASS flag."
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "docs/frontend/evidence-tooling.md",
+      "value": "Documents fixture/product command separation, exit semantics, computed bundle rules, pinned detector boundary, dossier-only polish, local-HTTP Playwright helpers, and normalized artifact shape."
+    },
+    {
+      "type": "file",
+      "path": "config/frontend-evidence.json",
+      "value": "Schema version 1 defines the 204800-byte limit, heavy chunk kinds/routes, blocking detector severities, polish checklist, eight accessibility checks, and WCAG ratios."
+    },
+    {
+      "type": "file",
+      "path": "C:/Users/harri/.pi/agent/skills/frontend-design/SKILL.md",
+      "value": "Quality heuristics reinforced accessible/performance-safe evidence and the decision to keep polish a Manifest Control Desk dossier validator rather than generic aesthetic auto-mutation."
+    }
+  ]
+}

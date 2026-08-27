@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:normalized-output-v1",
+  "title": "normalized-output-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "backend",
+    "solver_version",
+    "terminal_status",
+    "objective_micros",
+    "assignments",
+    "binding_constraints",
+    "statistics"
+  ],
+  "properties": {
+    "protocol_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "backend": {
+      "type": "string",
+      "enum": [
+        "minizinc",
+        "ortools"
+      ]
+    },
+    "solver_version": {
+      "type": "string"
+    },
+    "terminal_status": {
+      "type": "string",
+      "enum": [
+        "SATISFIED",
+        "OPTIMAL",
+        "UNSATISFIABLE",
+        "UNKNOWN"
+      ]
+    },
+    "objective_micros": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "load_id",
+          "bid_id"
+        ],
+        "properties": {
+          "load_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bid_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    "binding_constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "one_award_per_load",
+          "carrier_capacity",
+          "compatible_equipment",
+          "reserve_price",
+          "service_risk_cap",
+          "max_carrier_share",
+          "deterministic_tiebreak"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "solutions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nodes_bucket": {
+          "type": "string",
+          "enum": [
+            "under_100",
+            "under_1000",
+            "over_1000"
+          ]
+        }
+      }
+    }
+  }
+}

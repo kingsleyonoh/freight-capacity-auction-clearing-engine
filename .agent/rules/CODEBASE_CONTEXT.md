@@ -2,8 +2,8 @@
 
 > Greenfield plan from `docs/freight-capacity-auction-clearing-engine_prd.md`. Planned paths do not exist until their phase lands. Read `CODEBASE_CONTEXT_SCHEMA.md` and `CODEBASE_CONTEXT_MODULES.md` with this file.
 >
-> Last updated: 2026-07-09
-> Template synced: 2026-07-09
+> Last updated: 2026-07-14
+> Template synced: 2026-07-14
 
 ## Tech Stack
 
@@ -36,7 +36,7 @@ tests/                unit, integration, authorization, fixtures, e2e
 data/                 local DuckDB/artifacts; not canonical tenant authority
 ```
 
-Detailed planned files/dependency graph: `CODEBASE_CONTEXT_MODULES.md` and PRD §9. Schema/status/index detail: `CODEBASE_CONTEXT_SCHEMA.md` and PRD §4.
+Detailed planned files/dependency graph: `CODEBASE_CONTEXT_MODULES.md` and PRD §9. `approvals` owns an integration-neutral workflow-approval port and depends only on `shared`, `auth`, and `clearing`. `integrations` depends downward on `approvals`, implements the port, and the executable composition layer injects that implementation; `approvals` never imports `integrations`. Schema/status/index detail: `CODEBASE_CONTEXT_SCHEMA.md` and PRD §4.
 
 ## Tenant Model
 
@@ -66,7 +66,7 @@ Core readiness never depends on optional adapters. Core health: `/health`, `/hea
 | Group | Exact variables and safe defaults/requirements |
 |---|---|
 | App | `APP_ENV=development`; `APP_BASE_URL=http://localhost:8080`; `APP_PORT=8080`; `LOG_LEVEL=info`; `SECRET_KEY_BASE` required |
-| Data | `DATABASE_URL` required; `REDIS_URL=redis://localhost:6379/0`; `REPLAY_STORE_PATH=./data/replay.duckdb`; `MIGRATIONS_AUTO_RUN=false` |
+| Data | `DATABASE_URL` required; `REDIS_URL=redis://localhost:6379/0`; local host compute uses `REPLAY_STORE_PATH=./data/replays/replay.duckdb`; `MIGRATIONS_AUTO_RUN=false` |
 | Tenant seed | `SELF_REGISTRATION_ENABLED=true`; `DEFAULT_TENANT_NAME=Default Freight Auction Tenant`; `DEFAULT_ADMIN_EMAIL=admin@example.com`; `SEED_SAMPLE_DATA=true` |
 | Auth | `AUTH_TOKEN_TTL_MINUTES=60`; `API_KEY_PREFIX=fca_live` |
 | Import | `MAX_CSV_UPLOAD_MB=50`; `DEFAULT_CURRENCY=USD`; `BID_LATE_GRACE_SECONDS=0`; `UNKNOWN_CARRIER_POLICY=reject` |
@@ -86,8 +86,10 @@ Secrets are environment-only, never logged, and empty in `.env.example`.
 |---|---|
 | Install OCaml/test deps | `opam switch create . 5.2.0 --deps-only --with-test` |
 | Install asset/E2E tooling | `npm install` |
+| Initialize local host storage | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-storage.ps1 -Action init` or `bash scripts/local-storage.sh init` |
+| Verify local host storage | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-storage.ps1 -Action verify` or `bash scripts/local-storage.sh verify` |
 | Start infra | `docker compose up -d postgres redis` |
-| Stop infra | `docker compose down` |
+| Stop infra (volumes preserved) | `docker compose down` |
 | Check infra | `docker compose ps` |
 | Migrate DB | `dune exec bin/migrate.exe` |
 | First-run seed | `dune exec bin/setup.exe` |

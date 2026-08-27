@@ -1,0 +1,5 @@
+(library
+ (name fca_replays)
+ (wrapped false)
+ (modules duckdb_store replay_runner)
+ (libraries fca_process_runner lwt.unix yojson unix))

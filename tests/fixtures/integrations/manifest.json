@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "evidence_scope": "recorded_contract_only",
+  "network_policy": "no_live_call",
+  "recordings": [
+    {
+      "adapter": "notification_hub",
+      "case_id": "success",
+      "file": "notification_hub/success.json"
+    },
+    {
+      "adapter": "notification_hub",
+      "case_id": "timeout",
+      "file": "notification_hub/timeout.json"
+    },
+    {
+      "adapter": "notification_hub",
+      "case_id": "rate_limited_429",
+      "file": "notification_hub/rate_limited_429.json"
+    },
+    {
+      "adapter": "notification_hub",
+      "case_id": "duplicate",
+      "file": "notification_hub/duplicate.json"
+    },
+    {
+      "adapter": "workflow_engine",
+      "case_id": "execute_success",
+      "file": "workflow_engine/execute_success.json"
+    },
+    {
+      "adapter": "workflow_engine",
+      "case_id": "status_success",
+      "file": "workflow_engine/status_success.json"
+    },
+    {
+      "adapter": "workflow_engine",
+      "case_id": "timeout",
+      "file": "workflow_engine/timeout.json"
+    },
+    {
+      "adapter": "workflow_engine",
+      "case_id": "rate_limited_429",
+      "file": "workflow_engine/rate_limited_429.json"
+    },
+    {
+      "adapter": "workflow_engine",
+      "case_id": "duplicate",
+      "file": "workflow_engine/duplicate.json"
+    },
+    {
+      "adapter": "webhook_engine",
+      "case_id": "accepted",
+      "file": "webhook_engine/accepted.json"
+    },
+    {
+      "adapter": "webhook_engine",
+      "case_id": "duplicate",
+      "file": "webhook_engine/duplicate.json"
+    },
+    {
+      "adapter": "webhook_engine",
+      "case_id": "unknown_source",
+      "file": "webhook_engine/unknown_source.json"
+    },
+    {
+      "adapter": "webhook_engine",
+      "case_id": "signature_shaped_invalid",
+      "file": "webhook_engine/signature_shaped_invalid.json"
+    },
+    {
+      "adapter": "webhook_engine",
+      "case_id": "retriable_failure",
+      "file": "webhook_engine/retriable_failure.json"
+    }
+  ]
+}

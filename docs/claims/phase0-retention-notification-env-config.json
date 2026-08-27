@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "task": "Close APPROVAL_EXPIRY_HOURS, AUDIT_RETENTION_DAYS, SOLVER_ARTIFACT_RETENTION_DAYS, NOTIFICATION_HUB_ENABLED, and NOTIFICATION_HUB_URL configuration evidence — PRD §§5.4/5.7/7/14",
+  "operator": "mesh:phase0-retention-notification-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T12:30:00+01:00",
+  "completedAt": "2026-07-15T12:46:00+01:00",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-30-02-768Z-8ag3r4/workers/phase0-retention-notification-env-config-closure/gate-full-forced-runtest.txt",
+      "value": "Fresh disposable exact OCaml 5.2.0 full forced Dune runtest passed after focused RED and GREEN proof."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-30-02-768Z-8ag3r4/workers/phase0-retention-notification-env-config-closure/gate-static-build-format-architecture.txt",
+      "value": "Exact OCaml 5.2.0 @check, @all, selected ocamlformat, and dependency architecture gates passed."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-30-02-768Z-8ag3r4/workers/phase0-retention-notification-env-config-closure/gate-limits-env-safety.txt",
+      "value": "Typed bounds, safe defaults, env ignore coverage, safe examples, and touched file/function limits are recorded."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-30-02-768Z-8ag3r4/workers/phase0-retention-notification-env-config-closure/diff-summary.txt",
+      "value": "Minimal runtime-config/test/env/foundation repair and exactly-five progress closure; API key and retry remain unchecked."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-retention-notification-env-config.json",
+    ".env.example",
+    "config/runtime_config.ml",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "tests/unit/feature_flags_test.ml",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    "docs/progress.md"
+  ]
+}

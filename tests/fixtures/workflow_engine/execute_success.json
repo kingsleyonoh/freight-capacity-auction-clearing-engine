@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "adapter": "workflow_engine",
+  "case_id": "execute_success",
+  "direction": "outbound",
+  "evidence_scope": "recorded_contract_only",
+  "network_policy": "no_live_call",
+  "tenant_scope": {
+    "tenant_fixture": "../tenants.json",
+    "resolution_stage": "tenant_known",
+    "tenant_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "request": {
+    "method": "POST",
+    "route_template": "/api/workflows/{workflow_id}/execute",
+    "header_names": [
+      "Content-Type",
+      "Authorization"
+    ],
+    "redacted_headers": [
+      {
+        "name": "Authorization",
+        "value": "[REDACTED_FIXTURE]"
+      }
+    ],
+    "body": {
+      "workflow_ref": "high_value_approval",
+      "award_ref": "AWARD-RECORDED-1"
+    }
+  },
+  "transport": {
+    "outcome": "response",
+    "attempt": 1,
+    "elapsed_ms_bucket": "under_5000"
+  },
+  "response": {
+    "status": 202,
+    "header_names": [
+      "Content-Type"
+    ],
+    "redacted_headers": [],
+    "body": {
+      "execution_ref": "EXECUTION-RECORDED-1",
+      "status": "queued"
+    }
+  },
+  "expected": {
+    "adapter_status": "accepted",
+    "outbox_status": "delivered",
+    "retry_scheduled": false,
+    "duplicate_of": null,
+    "canonical_state_mutated": false,
+    "audit_code": "RECORDED_CONTRACT_OK",
+    "response_status": 202
+  }
+}

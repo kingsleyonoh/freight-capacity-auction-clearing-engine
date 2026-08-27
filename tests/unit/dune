@@ -1,0 +1,231 @@
+(test
+ (name migration_catalog_test)
+ (modules migration_catalog_test)
+ (deps
+  ../../migrations/000001_create_schema_migrations.sql
+  ../../migrations/000002_create_auction_core.sql
+  ../../migrations/000003_create_replay_approval_notifications.sql
+  ../../migrations/000004_create_integrations.sql)
+ (action
+  (setenv
+   FCA_BASELINE_MIGRATION
+   %{dep:../../migrations/000001_create_schema_migrations.sql}
+   (run %{test})))
+ (libraries alcotest fca_shared))
+
+(test
+ (name queue_memory_conformance_test)
+ (modules queue_memory_conformance_test)
+ (libraries ounit2 queue_test_support lwt.unix yojson))
+
+(test
+ (name repository_scaffold_test)
+ (modules repository_scaffold_test)
+ (libraries alcotest unix))
+
+(library
+ (name config_test_support)
+ (modules config_test_support)
+ (libraries fca_config alcotest yojson))
+
+(test
+ (name runtime_config_inventory_test)
+ (modules runtime_config_inventory_test)
+ (libraries alcotest config_test_support fca_config uri yojson))
+
+(test
+ (name runtime_config_required_test)
+ (modules runtime_config_required_test)
+ (libraries alcotest config_test_support fca_config yojson))
+
+(test
+ (name runtime_config_validation_test)
+ (modules runtime_config_validation_test)
+ (libraries alcotest config_test_support fca_config))
+
+(test
+ (name local_storage_runtime_config_test)
+ (modules local_storage_runtime_config_test)
+ (libraries alcotest config_test_support fca_config))
+
+(test
+ (name runtime_config_security_test)
+ (modules runtime_config_security_test)
+ (libraries alcotest config_test_support fca_config yojson))
+
+(test
+ (name runtime_config_webhook_observability_test)
+ (modules runtime_config_webhook_observability_test)
+ (libraries alcotest config_test_support fca_config fca_shared uri yojson))
+
+(test
+ (name runtime_config_metrics_posthog_test)
+ (modules runtime_config_metrics_posthog_test)
+ (libraries alcotest config_test_support fca_config uri yojson))
+
+(test
+ (name feature_flags_test)
+ (modules feature_flags_test)
+ (libraries alcotest config_test_support fca_config))
+
+(test
+ (name errors_test)
+ (modules errors_test)
+ (libraries alcotest fca_shared yojson))
+
+(test
+ (name logging_test)
+ (modules logging_test)
+ (libraries alcotest fca_shared logs yojson))
+
+(test
+ (name tenant_context_test)
+ (modules tenant_context_test)
+ (deps ../fixtures/tenants.json)
+ (action
+  (setenv
+   FCA_TENANT_FIXTURE
+   %{dep:../fixtures/tenants.json}
+   (run %{test})))
+ (libraries alcotest fca_shared yojson))
+
+(test
+ (name tenant_fixture_test)
+ (modules tenant_fixture_test)
+ (deps ../fixtures/tenants.json ../fixtures/tenants.schema.json)
+ (action
+  (setenv
+   FCA_TENANT_FIXTURE
+   %{dep:../fixtures/tenants.json}
+   (setenv
+    FCA_TENANT_FIXTURE_SCHEMA
+    %{dep:../fixtures/tenants.schema.json}
+    (run %{test}))))
+ (libraries alcotest tenant_test_support yojson))
+
+(test
+ (name event_outbox_test)
+ (modules event_outbox_test)
+ (deps ../fixtures/tenants.json)
+ (action
+  (setenv
+   FCA_TENANT_FIXTURE
+   %{dep:../fixtures/tenants.json}
+   (run %{test})))
+ (libraries alcotest tenant_test_support fca_shared lwt.unix yojson))
+
+(test
+ (name process_runner_test)
+ (modules process_runner_test)
+ (deps %{exe:../fixtures/process_fixture.exe})
+ (action
+  (setenv
+   FCA_PROCESS_FIXTURE
+   %{exe:../fixtures/process_fixture.exe}
+   (run %{test})))
+ (libraries alcotest fca_process_runner lwt.unix yojson))
+
+(test
+ (name solver_backend_test)
+ (modules solver_backend_test)
+ (deps %{exe:../fixtures/process_fixture.exe})
+ (action
+  (setenv
+   FCA_PROCESS_FIXTURE
+   %{exe:../fixtures/process_fixture.exe}
+   (run %{test})))
+ (libraries alcotest fca_process_runner fca_solver lwt.unix yojson))
+
+(test
+ (name duckdb_store_test)
+ (modules duckdb_store_test)
+ (deps %{exe:../fixtures/process_fixture.exe})
+ (action
+  (setenv
+   FCA_PROCESS_FIXTURE
+   %{exe:../fixtures/process_fixture.exe}
+   (run %{test})))
+ (libraries
+  alcotest
+  config_test_support
+  fca_config
+  fca_process_runner
+  fca_replays
+  lwt.unix
+  yojson))
+
+(test
+ (name import_fixture_corpus_test)
+ (modules import_fixture_corpus_test)
+ (deps
+  (source_tree ../fixtures/imports)
+  ../fixtures/tenants.json)
+ (action
+  (setenv
+   FCA_FIXTURE_ROOT
+   %{workspace_root}/tests/fixtures
+   (run %{test})))
+ (libraries alcotest fixture_contract_support yojson))
+
+(test
+ (name solver_fixture_contract_test)
+ (modules solver_fixture_contract_test)
+ (deps
+  (source_tree ../fixtures/solver))
+ (action
+  (setenv
+   FCA_FIXTURE_ROOT
+   %{workspace_root}/tests/fixtures
+   (run %{test})))
+ (libraries alcotest fixture_contract_support yojson))
+
+(test
+ (name replay_fixture_contract_test)
+ (modules replay_fixture_contract_test)
+ (deps
+  (source_tree ../fixtures/replay))
+ (action
+  (setenv
+   FCA_FIXTURE_ROOT
+   %{workspace_root}/tests/fixtures
+   (run %{test})))
+ (libraries alcotest fixture_contract_support yojson))
+
+(test
+ (name integration_fixture_contract_test)
+ (modules integration_fixture_contract_test)
+ (deps
+  (source_tree ../fixtures/integrations)
+  (source_tree ../fixtures/notification_hub)
+  (source_tree ../fixtures/workflow_engine)
+  (source_tree ../fixtures/webhook_engine))
+ (action
+  (setenv
+   FCA_FIXTURE_ROOT
+   %{workspace_root}/tests/fixtures
+   (run %{test})))
+ (libraries alcotest fixture_contract_support yojson))
+
+(test
+ (name fixture_privacy_scope_test)
+ (modules fixture_privacy_scope_test)
+ (deps
+  ../fixtures/tenants.json
+  (source_tree ../fixtures/imports)
+  (source_tree ../fixtures/solver)
+  (source_tree ../fixtures/replay)
+  (source_tree ../fixtures/integrations)
+  (source_tree ../fixtures/notification_hub)
+  (source_tree ../fixtures/workflow_engine)
+  (source_tree ../fixtures/webhook_engine))
+ (action
+  (setenv
+   FCA_FIXTURE_ROOT
+   %{workspace_root}/tests/fixtures
+   (run %{test})))
+ (libraries alcotest fixture_contract_support yojson))
+
+(test
+ (name domain_product_test)
+ (modules domain_product_test)
+ (libraries alcotest fca_auth fca_imports fca_clearing fca_approvals fca_reports fca_replays fca_notifications fca_integrations yojson))

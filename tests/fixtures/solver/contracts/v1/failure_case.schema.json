@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fca:fixture:solver-failure-case-v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "case_id", "process_outcome", "expected_job_status", "error_code", "awards"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "case_id": { "type": "string", "const": "timeout" },
+        "process_outcome": { "type": "string", "const": "timeout" },
+        "expected_job_status": { "type": "string", "const": "failed" },
+        "error_code": { "type": "string", "const": "SOLVER_TIMEOUT" },
+        "awards": { "type": "array", "maxItems": 0 }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "case_id", "process_outcome", "expected_job_status", "error_code", "awards"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "case_id": { "type": "string", "const": "malformed" },
+        "process_outcome": { "type": "string", "const": "malformed" },
+        "expected_job_status": { "type": "string", "const": "failed" },
+        "error_code": { "type": "string", "const": "SOLVER_MALFORMED_OUTPUT" },
+        "awards": { "type": "array", "maxItems": 0 }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "case_id", "process_outcome", "exit_code", "stderr_policy", "expected_job_status", "error_code", "awards"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "case_id": { "type": "string", "const": "nonzero" },
+        "process_outcome": { "type": "string", "const": "nonzero_exit" },
+        "exit_code": { "type": "integer", "const": 17 },
+        "stderr_policy": { "type": "string", "const": "omitted" },
+        "expected_job_status": { "type": "string", "const": "failed" },
+        "error_code": { "type": "string", "const": "SOLVER_PROCESS_FAILED" },
+        "awards": { "type": "array", "maxItems": 0 }
+      }
+    }
+  ]
+}

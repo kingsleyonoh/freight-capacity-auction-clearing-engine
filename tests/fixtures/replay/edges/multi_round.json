@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "tenant_id": "11111111-1111-4111-8111-111111111111",
+  "observed_at": "2025-03-04T12:00:00Z",
+  "evidence_scope": "fixture_contract_only",
+  "load_ref": "MULTI-LOAD-1",
+  "rounds": [
+    {
+      "round": 1,
+      "events": [
+        "BID-1",
+        "BID-2"
+      ]
+    },
+    {
+      "round": 2,
+      "events": [
+        "BID-3",
+        "BID-4"
+      ]
+    }
+  ],
+  "expected_snapshot_round": 2
+}

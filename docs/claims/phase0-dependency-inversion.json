@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "task": "Resolve the approvals/integrations dependency cycle before PRD §9 implementation",
+  "operator": "mesh:dependency-cycle-governance-fix",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-14T22:25:28Z",
+  "completedAt": "2026-07-14T22:28:15Z",
+  "expectedFiles": [
+    "docs/freight-capacity-auction-clearing-engine_prd.md",
+    ".agent/rules/CODING_STANDARDS.md",
+    ".agent/rules/CODEBASE_CONTEXT.md",
+    ".agent/rules/CODEBASE_CONTEXT_MODULES.md",
+    "docs/claims/phase0-dependency-inversion.json"
+  ]
+}

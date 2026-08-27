@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "task": "Close NOTIFICATION_HUB_API_KEY, NOTIFICATION_RETRY_ENABLED, WORKFLOW_ENGINE_ENABLED, WORKFLOW_ENGINE_URL, and WORKFLOW_ENGINE_API_KEY configuration evidence — PRD §§5.7/6.3/6.4/14",
+  "operator": "mesh:phase0-notification-workflow-env-config-closure",
+  "tool": "pi-delegation-mesh",
+  "branch": "dev",
+  "status": "done",
+  "startedAt": "2026-07-15T13:01:42+01:00",
+  "completedAt": "2026-07-15T13:23:06+01:00",
+  "evidence": [
+    {
+      "type": "test-output",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-58-26-985Z-86ktqj/workers/phase0-notification-workflow-env-config-closure/gate-full-forced-runtest.txt",
+      "value": "Fresh disposable exact OCaml 5.2.0 forced full Dune runtest passed (79 tests across 14 executables)."
+    },
+    {
+      "type": "command",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-58-26-985Z-86ktqj/workers/phase0-notification-workflow-env-config-closure/gate-static-build-format-architecture.txt",
+      "value": "Exact OCaml 5.2.0 @check, @all, selected effective ocamlformat, and dependency architecture gates passed."
+    },
+    {
+      "type": "file",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-58-26-985Z-86ktqj/workers/phase0-notification-workflow-env-config-closure/gate-security-counts.txt",
+      "value": "Count-only scanner found zero secret matches; example and ignored local Notification/Workflow API key values are blank."
+    },
+    {
+      "type": "diff-summary",
+      "path": ".pi/agents/runs/mesh-2026-07-15T11-58-26-985Z-86ktqj/workers/phase0-notification-workflow-env-config-closure/diff-summary.txt",
+      "value": "No production implementation repair was needed; focused evidence tests/docs and exactly five progress closures were added while later Workflow items remain unchecked."
+    }
+  ],
+  "expectedFiles": [
+    "docs/claims/phase0-notification-workflow-env-config.json",
+    ".env.example",
+    "tests/unit/runtime_config_validation_test.ml",
+    "tests/unit/runtime_config_security_test.ml",
+    "tests/unit/feature_flags_test.ml",
+    ".agent/knowledge/foundation/core-runtime-config.md",
+    "docs/progress.md"
+  ]
+}

@@ -1,0 +1,38 @@
+opam-version: "2.0"
+name: "freight_capacity_auction_clearing_engine"
+version: "0.1.0"
+synopsis: "Tenant-scoped freight capacity auction clearing engine"
+description: "Explainable, deterministic freight spot-capacity auction clearing and replay."
+maintainer: "Kingsley Onoh"
+authors: ["Kingsley Onoh"]
+license: "MIT"
+homepage: "https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine"
+bug-reports: "https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine/issues"
+dev-repo: "git+https://github.com/kingsleyonoh/freight-capacity-auction-clearing-engine.git"
+depends: [
+  "ocaml" {= "5.2.0"}
+  "dune" {>= "3.16"}
+  "dream" {= "1.0.0~alpha7"}
+  "lwt" {>= "5.10.1" & < "5.11"}
+  "logs" {>= "0.10.0" & < "0.11"}
+  "yojson"
+  "digestif" {= "1.3.1"}
+  "uri" {= "4.4.0"}
+  "ppx_deriving_yojson"
+  "angstrom" {= "0.16.1"}
+  "caqti" {>= "2.3.2" & < "2.4"}
+  "caqti-lwt" {>= "2.3.2" & < "2.4"}
+  "caqti-driver-postgresql" {= "2.3.0"}
+  "cohttp" {= "6.2.1"}
+  "cohttp-lwt" {= "6.2.1"}
+  "cohttp-lwt-unix" {= "6.2.1"}
+  "redis" {= "0.8"}
+  "redis-lwt" {= "0.8"}
+  "alcotest" {with-test & = "1.9.1"}
+  "ounit2" {with-test & = "2.2.7"}
+]
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+run-test: [["dune" "runtest" "-p" name "-j" jobs]]

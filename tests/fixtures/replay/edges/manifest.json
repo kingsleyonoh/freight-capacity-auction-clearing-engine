@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "tenant_fixture": "../../tenants.json",
+  "scenarios": [
+    {
+      "schema_version": 1,
+      "case_id": "thin_lane",
+      "file": "thin_lane.csv",
+      "record_count": 1,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "surge",
+      "file": "surge.csv",
+      "record_count": 9,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "late_bid",
+      "file": "late_bid.csv",
+      "record_count": 2,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "withdrawal",
+      "file": "withdrawal.json",
+      "record_count": 2,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "duplicate",
+      "file": "duplicate.json",
+      "record_count": 2,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "multi_round",
+      "file": "multi_round.json",
+      "record_count": 4,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "emergency_reclear",
+      "file": "emergency_reclear.json",
+      "record_count": 2,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    },
+    {
+      "schema_version": 1,
+      "case_id": "scenario_replay",
+      "file": "scenario_replay.json",
+      "record_count": 1,
+      "evidence_scope": "fixture_contract_only",
+      "production_clearing_success_eligible": false
+    }
+  ]
+}
